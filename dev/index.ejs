@@ -1,0 +1,214 @@
+<head>
+    <style>
+        body {
+            font-family: "Noto Sans", sans-serif;
+        }
+
+        .field {
+            display: block;
+            margin: .5em;
+        }
+
+        .label {
+            display: inline-block;
+            min-width: 25%;
+            margin-right: 1em;
+            text-align: right;
+        }
+
+        small {
+            color: #777
+        }
+    </style>
+</head>
+<body>
+<form id="params">
+    <fieldset>
+        <legend>Initialize options</legend>
+
+        <span
+                class="helperElement"
+                style="float: right; border: 1px solid #777; padding: 0 .5em; background: #aaa;"
+        >
+            I am a helper element.<br>Clicks on me do not trigger blur.
+        </span>
+
+        <label class="field">
+            <span class="label">Type</span>
+            <select name="type">
+                <%
+                ['ADDRESS', 'NAME', 'PARTY', 'EMAIL', 'BANK'].map((type)=>{
+                %>
+                    <option value="<%= type %>"><%= type %></option>
+                <%
+                })
+                %>
+            </select>
+        </label>
+        <label class="field">
+            <span class="label">Token</span>
+            <input name="requestToken">
+        </label>
+        <label class="field">
+            <span class="label">count</span>
+            <input name="count" type="number" min="1" value="5" max="20">
+        </label>
+        <label class="field">
+            <span class="label">minLength</span>
+            <input name="minLength" type="number" min="0" value="1">
+        </label>
+        <label class="field">
+            <span class="label">mobileMaxWidth</span>
+            <input name="mobileMaxWidth" type="number" min="0" step="100" value="600">
+        </label>
+        <%
+        ['triggerSelectOnEnter', 'triggerSelectOnBlur', 'triggerSelectOnSpace'].forEach((name)=>{
+        %>
+            <label class="field">
+                <span class="label"><%- name %></span>
+                <input name="<%= name %>" type="checkbox">
+            </label>
+        <%
+        })
+        %>
+        <label class="field">
+            <span class="label">enrichmentEnabled</span>
+            <input name="enrichmentEnabled" type="checkbox">
+        </label>
+        <label class="field">
+            <span class="label">preventBadQueries</span>
+            <input name="preventBadQueries" type="checkbox">
+        </label>
+        <label class="field">
+            <span class="label">autoHighlightFirst</span>
+            <input name="autoHighlightFirst" type="checkbox">
+        </label>
+        <label class="field">
+            <span class="label">scrollOnFocus</span>
+            <input name="scrollOnFocus" type="checkbox">
+        </label>
+        <label class="field">
+            <span class="label">noSuggestionsHint</span>
+            <input name="noSuggestionsHint">
+        </label>
+        <label class="field">
+            <span class="label">unformattableTokens</span>
+            <input name="unformattableTokens">
+            <small>comma separated</small>
+        </label>
+        <label class="field">
+            <span class="label">Custom renderSuggestion</span>
+            <input name="renderSuggestion" type="checkbox">
+            <small>(Output parts in reverse order, underlines words starting with capital letter)</small>
+        </label>
+        <label class="field">
+            <span class="label">Custom formatSelected</span>
+            <input name="formatSelected" type="checkbox">
+            <small>(Serialize all values form suggestion.data)</small>
+        </label>
+        <label class="field">
+            <span class="label">Log onSearch* to console</span>
+            <input name="logSearchCallbacks" type="checkbox">
+        </label>
+
+        <div class="field">
+            <button type="submit">Apply</button>
+        </div>
+    </fieldset>
+</form>
+
+<div style="margin-top: 2em; padding: 2em; background: #eee;">
+    <input id="input" style="width: 400px">
+
+    <pre id="selectedData" style="margin: 1em 0 0;"></pre>
+</div>
+</body>
+<script>
+    var params = document.getElementById('params');
+    var input = document.getElementById('input');
+    var selectedData = document.getElementById('selectedData');
+
+    window.addEventListener('load', () => {
+        var inputFields = {
+            'checkbox': 'checked',
+            'number': 'valueAsNumber',
+            'range': 'valueAsNumber',
+        }
+
+        params.addEventListener('submit', (e) => {
+            e.preventDefault()
+
+            const fields = params.querySelectorAll('[name]');
+            const options = Array.from(fields).reduce((memo, field) => ({
+                ...memo,
+                [field.name]: field.tagName === 'TEXTAREA'
+                    ? field.value.split('\n')
+                    : field[inputFields[field.type] || 'value']
+            }), {})
+
+            window.localStorage.setItem('suggestions-options', JSON.stringify(options));
+
+            initSuggestions(input, options);
+        })
+
+        const initialOptions = JSON.parse(localStorage.getItem('suggestions-options') || '{}')
+        Object.entries(initialOptions).forEach(([name, value]) => {
+            const field = document.getElementsByName(name)[0]
+            if (field) {
+                field[inputFields[field.type] || 'value'] = field.tagName === 'TEXTAREA'
+                    ? value.join('\n')
+                    : value
+            }
+        })
+        if (initialOptions.type) {
+            initSuggestions(input, initialOptions);
+        }
+    })
+
+    function initSuggestions(input, options) {
+        const {logSearchCallbacks, logSelectCallbacks, ...initOptions} = options;
+
+        <%- library %>.
+        init(input, {
+            ...initOptions,
+            formatSelected: options.formatSelected && customFormatSelected,
+            helperElements: document.getElementsByClassName('helperElement'),
+            renderSuggestion: options.renderSuggestion && customRenderSuggestion,
+            ...(logSearchCallbacks
+                ? {
+                    onSearchStart: (...a) => console.log('onSearchStart', a),
+                    onSearchComplete: (...a) => console.log('onSearchComplete', a),
+                    onSearchError: (...a) => console.log('onSearchError', a),
+                }
+                : {}),
+            onSelect: (...a) => {
+                const suggestion = a[0];
+                console.log('onSelect', suggestion.value, a);
+                selectedData.innerText = JSON.stringify(suggestion, null, 2)
+            },
+            onSelectNothing: (...a) => {
+                console.log('onSelectNothing', a);
+                selectedData.innerText = ''
+            },
+            onInvalidateSelection: (...a) => {
+                console.log('onInvalidateSelection', a);
+            },
+        });
+    }
+
+    function customRenderSuggestion(suggestion, query) {
+        const hasCommas = suggestion.value.includes(',');
+        const separator = hasCommas ? ', ' : ' ';
+        return suggestion.value.replace(/([A-ZА-ЯЁ][a-zа-яё\d]*)/g, '<u>$1</u>')
+            .split(separator).reverse().join(separator)
+    }
+
+    function customFormatSelected(suggestion) {
+        return Object.values(suggestion.data)
+            // Omit parts with non-russian symbols
+            .filter(p => p && !/[a-z\d]/i.test(p))
+            // Leave only unique
+            .filter((p, i, pp) => !pp.includes(p, i + 1))
+            .join(', ')
+    }
+</script>

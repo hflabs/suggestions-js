@@ -1,0 +1,60 @@
+@import "src/theme"
+
+$hint-content-height: 20px
+
+.popover
+  box-sizing: border-box
+  background-color: $suggestions-bg-color
+  background-color: var(suggestions-bg-color, $suggestions-bg-color)
+  border: 1px solid #999
+  cursor: default
+  position: absolute
+  z-index: 9999
+  z-index: var(suggestions-z-index, 9999)
+
+  //Prevent font scaling in landscape while allowing user zoom
+  -webkit-text-size-adjust: 100%
+
+  strong
+    font-weight: normal
+    color: $suggestion-mark-color
+    color: var(suggestion-mark-color, $suggestion-mark-color)
+
+  &.isMobile
+    border-style: none
+//  .suggestions-suggestion {
+//    border-bottom: 1px solid #ddd;
+//}
+
+.hint
+  display: flex
+  justify-content: space-between
+  font-size: 85%
+  color: $secondary-color
+  line-height: $hint-content-height
+
+  .hintText
+    padding: 4px
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+  .promo
+    padding: 4px
+    filter: grayscale(100%)
+    &:hover
+      filter: none
+
+    > svg
+      height: $hint-content-height
+
+.item
+  padding: 4px
+  overflow: hidden
+
+  &:hover
+    background: darken($suggestions-bg-color, 3%)
+
+  &.isSelected
+    &, &:hover
+      background: darken($suggestions-bg-color, 6%)
