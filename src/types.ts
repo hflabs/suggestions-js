@@ -1,10 +1,25 @@
+/**
+ * Core types used in plugin
+ */
+
 import { ParsedUrlQueryInput } from "querystring";
-import ImplementationBase from "./RequestModes/ImplementationBase";
 
-export type TApiType = "ADDRESS" | "NAME" | "PARTY" | "EMAIL" | "BANK";
-export type TApiRequestMode<D> = "suggest" | "findById" | ImplementationBase<D>;
+/**
+ * Pick properties that are functions
+ */
+export type PickMethods<T> = Pick<
+  T,
+  {
+    [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? K : never;
+  }[keyof T]
+>;
 
-export interface IImplementationOptions<D> {
+export type InitType = "address" | "fio" | "party" | "email" | "bank" | string;
+
+/**
+ * Options used by inner classes
+ */
+export interface InnerInitOptions<D> {
   autoHighlightFirst: boolean;
   classNames?: {
     input?: string;
@@ -15,20 +30,20 @@ export interface IImplementationOptions<D> {
   count: number;
   deferRequestBy: number;
   enrichmentEnabled: boolean;
-  formatSelected?: (suggestion: ISuggestion<D>) => string;
-  helperElements: Array<Element>;
+  formatSelected?: (suggestion: Suggestion<D>) => string;
+  helperElements?: Element[];
   hint: string;
-  isSuggestionDataComplete?: (suggestion: ISuggestion<D>) => boolean;
+  isSuggestionDataComplete?: (suggestion: Suggestion<D>) => boolean;
   isQueryRequestable?: (query: string) => boolean;
   language: "ru" | "en";
   minLength: number;
   mobileMaxWidth: number;
   noCache: boolean;
   noSuggestionsHint: string;
-  onInvalidateSelection?: (suggestion: ISuggestion<D>) => void;
+  onInvalidateSelection?: (suggestion: Suggestion<D>) => void;
   onSearchComplete?: (
     query: string,
-    suggestions: ISuggestions<D>,
+    suggestions: Suggestions<D>,
     el: HTMLInputElement
   ) => void;
   onSearchError?: (
@@ -38,7 +53,7 @@ export interface IImplementationOptions<D> {
   ) => void;
   onSearchStart?: (query: string, el: HTMLInputElement) => string | void;
   onSelect?: (
-    suggestion: ISuggestion<D>,
+    suggestion: Suggestion<D>,
     changed: boolean,
     el: HTMLInputElement
   ) => void;
@@ -46,10 +61,10 @@ export interface IImplementationOptions<D> {
   partner?: string;
   preventBadQueries: false;
   renderSuggestion?: (
-    suggestion: ISuggestion<D>,
+    suggestion: Suggestion<D>,
     query: string,
     options?: {
-      suggestions: ISuggestions<D>;
+      suggestions: Suggestions<D>;
       unformattableTokens?: string[];
     }
   ) => string;
@@ -69,20 +84,36 @@ export interface IImplementationOptions<D> {
   triggerSelectOnBlur: boolean;
   triggerSelectOnEnter: boolean;
   triggerSelectOnSpace: boolean;
-  type: TApiType;
+  type: InitType;
   unformattableTokens?: string[];
 }
 
-export interface IInitOptions<D>
-  extends Omit<IImplementationOptions<D>, "helperElements"> {
+/**
+ * Options exposed for initializing
+ */
+export interface InitOptions<D>
+  extends Omit<InnerInitOptions<D>, "helperElements"> {
+  // Can be Array<Element> / NodeListOf<Element> / HTMLCollection<Element>
   helperElements?: ArrayLike<Element>;
-  requestMode: TApiRequestMode<D>;
 }
 
-export interface ISuggestion<D> {
+export interface Suggestion<D> {
   value: string;
   unrestricted_value: string;
   data: D;
 }
 
-export type ISuggestions<D> = ISuggestion<D>[];
+export type Suggestions<D> = Suggestion<D>[];
+
+export type StatusPlan = "FREE" | string;
+
+export interface Status {
+  count: number;
+  enrich: boolean;
+  name: InitType;
+  resources: { version: string; name: string }[];
+  search: boolean;
+  state: "ENABLED" | "DISABLED" | "INDEXING" | "REINDEXING";
+  version: string;
+  plan?: StatusPlan;
+}

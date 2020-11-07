@@ -1,8 +1,9 @@
-import { IInitOptions } from "../types";
-import Disposable from "../Disposable";
+import { InnerInitOptions } from "../types";
+import Disposable from "./Disposable";
 import { addClass, removeClass } from "../utils/className";
 import classes from "./Input.sass";
 import { debounce } from "../utils/debounce";
+import { isString } from "../utils/isString";
 
 export const EVENT_INPUT_VISIBLE = "suggestions-input-visible";
 export const EVENT_INPUT_CHANGE = "suggestions-value-change";
@@ -16,16 +17,22 @@ export const INPUT_ENHANCE_ATTRIBUTES = {
   spellcheck: "false",
 };
 
-export type IInputOptions = Pick<
-  IInitOptions<unknown>,
+export type InputInitOptions = Pick<
+  InnerInitOptions<unknown>,
   "classNames" | "deferRequestBy"
 >;
 
+/**
+ * Enhance the text-field element.
+ *
+ * Set attributes to disable browser's enhancing like spellcheck.
+ * Observe text-field visibility. Provide cross-browser onChange event.
+ */
 export default class Input extends Disposable {
   private lastValue: string = this.el.value;
   private suggestedValue: string | null = null;
 
-  constructor(private el: HTMLInputElement, private options: IInputOptions) {
+  constructor(private el: HTMLInputElement, private options: InputInitOptions) {
     super();
     this.setupElementClass();
     this.setupAttributes();
@@ -148,10 +155,7 @@ export default class Input extends Disposable {
     const handleKeyup = debounce(() => {
       const { value } = this.el;
 
-      if (
-        typeof this.suggestedValue === "string" &&
-        value === this.suggestedValue
-      )
+      if (isString(this.suggestedValue) && value === this.suggestedValue)
         return;
 
       if (value !== this.lastValue) {

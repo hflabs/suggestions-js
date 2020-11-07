@@ -1,4 +1,5 @@
 <head>
+    <title>Suggestions</title>
     <style>
         body {
             font-family: "Noto Sans", sans-serif;
@@ -89,7 +90,7 @@
         </label>
         <label class="field">
             <span class="label">noSuggestionsHint</span>
-            <input name="noSuggestionsHint">
+            <input name="noSuggestionsHint" value="Неизвестное значение">
         </label>
         <label class="field">
             <span class="label">unformattableTokens</span>
@@ -118,6 +119,8 @@
 </form>
 
 <div style="margin-top: 2em; padding: 2em; background: #eee;">
+    <label for="input">Type here:</label>
+    <br>
     <input id="input" style="width: 400px">
 
     <pre id="selectedData" style="margin: 1em 0 0;"></pre>
@@ -193,6 +196,7 @@
             onInvalidateSelection: (...a) => {
                 console.log('onInvalidateSelection', a);
             },
+            unformattableTokens: initOptions.unformattableTokens?.split(',')
         });
     }
 

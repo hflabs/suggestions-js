@@ -1,16 +1,16 @@
-import { IRequestModeOptions } from "./ImplementationFindById";
-import Popover from "../Popover/Popover";
-import { highlightMatches } from "../utils/highlightMatches";
-import { noop } from "../utils/noop";
-import { ISuggestion, ISuggestions } from "../types";
-import { isMobileViewport } from "../utils/isMobileViewport";
-import { isCursorAtEnd, setCursorAtEnd } from "../utils/cursor";
-import { scrollToTop } from "../utils/scrollToTop";
+import Popover from "../Popover";
+import { highlightMatches } from "../../utils/highlightMatches";
+import { noop } from "../../utils/noop";
+import { Suggestion, Suggestions } from "../../types";
+import { isMobileViewport } from "../../utils/isMobileViewport";
+import { isCursorAtEnd, setCursorAtEnd } from "../../utils/cursor";
+import { scrollToTop } from "../../utils/scrollToTop";
 import ImplementationSuggestionsBase from "./ImplementationSuggestionsBase";
-import { EVENT_INPUT_CHANGE } from "../Input/Input";
-import { areSuggestionsSame, hasQualityCode } from "../utils/suggestion";
+import { EVENT_INPUT_CHANGE } from "../Input";
+import { areSuggestionsSame, hasQualityCode } from "../../utils/suggestion";
+import { ImplementationBaseOptions } from "./ImplementationBase";
 
-enum TPopoverState {
+enum PopoverState {
   CLOSED,
   OPENING, // data is fetching
   OPEN,
@@ -20,13 +20,13 @@ enum TPopoverState {
 export default class ImplementationSuggest<
   D
 > extends ImplementationSuggestionsBase<D> {
-  private popoverState: TPopoverState = TPopoverState.CLOSED;
+  private popoverState: PopoverState = PopoverState.CLOSED;
   private popover: Popover | null = null;
-  private suggestions: ISuggestions<D> = [];
+  private suggestions: Suggestions<D> = [];
   private highlightIndex = -1;
   private shouldIgnoreBlur = false;
 
-  constructor(el: HTMLInputElement, options: IRequestModeOptions<D>) {
+  constructor(el: HTMLInputElement, options: ImplementationBaseOptions<D>) {
     super(el, options);
     this.fetchSuggestionApiMethod = "suggest";
     this.listenToInput();
@@ -122,10 +122,10 @@ export default class ImplementationSuggest<
         case "ArrowDown":
           e.preventDefault();
           switch (this.popoverState) {
-            case TPopoverState.CLOSED:
+            case PopoverState.CLOSED:
               this.updatePopover();
               break;
-            case TPopoverState.OPEN:
+            case PopoverState.OPEN:
               this.highlightNext();
               break;
           }
@@ -133,22 +133,19 @@ export default class ImplementationSuggest<
 
         case "ArrowUp":
           e.preventDefault();
-          if (this.popoverState === TPopoverState.OPEN) {
+          if (this.popoverState === PopoverState.OPEN) {
             this.highlightPrev();
           }
           break;
 
         case "Escape":
-          if (this.popoverState === TPopoverState.OPEN) {
+          if (this.popoverState === PopoverState.OPEN) {
             this.disposePopover();
           }
           break;
 
         case "Enter":
-          if (
-            triggerSelectOnEnter &&
-            this.popoverState === TPopoverState.OPEN
-          ) {
+          if (triggerSelectOnEnter && this.popoverState === PopoverState.OPEN) {
             e.preventDefault();
             this.select(this.highlightIndex);
           }
@@ -158,7 +155,7 @@ export default class ImplementationSuggest<
           if (
             triggerSelectOnSpace &&
             isCursorAtEnd(this.el) &&
-            this.popoverState === TPopoverState.OPEN
+            this.popoverState === PopoverState.OPEN
           ) {
             e.preventDefault();
             this.select(this.highlightIndex, { continueSelecting: true });
@@ -168,7 +165,7 @@ export default class ImplementationSuggest<
     };
 
     const handleFocus = () => {
-      if (this.popoverState === TPopoverState.CLOSED) {
+      if (this.popoverState === PopoverState.CLOSED) {
         this.updatePopover();
       }
 
@@ -182,8 +179,8 @@ export default class ImplementationSuggest<
       if (!this.shouldIgnoreBlur) {
         if (
           triggerSelectOnBlur &&
-          this.popoverState !== TPopoverState.OPENING &&
-          this.popoverState !== TPopoverState.SELECTING &&
+          this.popoverState !== PopoverState.OPENING &&
+          this.popoverState !== PopoverState.SELECTING &&
           this.isQueryRequestable(input.getValue())
         ) {
           this.select(this.highlightIndex);
@@ -225,7 +222,7 @@ export default class ImplementationSuggest<
     }
   }
 
-  private setPopoverState(popoverState: TPopoverState) {
+  private setPopoverState(popoverState: PopoverState) {
     this.popoverState = popoverState;
   }
 
@@ -249,12 +246,12 @@ export default class ImplementationSuggest<
         // Focusing should be before starting selecting to avoid re-showing popover
         this.el.focus();
 
-        if (this.popoverState === TPopoverState.OPEN) {
+        if (this.popoverState === PopoverState.OPEN) {
           this.select(index);
         }
       },
     });
-    this.setPopoverState(TPopoverState.OPEN);
+    this.setPopoverState(PopoverState.OPEN);
     this.setHighlightIndex(this.getMatchedHighlightIndex());
     this.onDispose(() => this.disposePopover());
   }
@@ -263,7 +260,7 @@ export default class ImplementationSuggest<
     if (this.popover) {
       this.popover.dispose();
       this.popover = null;
-      this.setPopoverState(TPopoverState.CLOSED);
+      this.setPopoverState(PopoverState.CLOSED);
       // this.options.input.suggestValue(null)
       this.setHighlightIndex(-1);
     }
@@ -279,8 +276,8 @@ export default class ImplementationSuggest<
   private updateSuggestions(query: string) {
     const { renderSuggestion, unformattableTokens } = this.options;
 
-    if (this.popoverState === TPopoverState.CLOSED) {
-      this.setPopoverState(TPopoverState.OPENING);
+    if (this.popoverState === PopoverState.CLOSED) {
+      this.setPopoverState(PopoverState.OPENING);
     }
 
     this.fetchSuggestions(query)
@@ -288,7 +285,7 @@ export default class ImplementationSuggest<
         this.suggestions = suggestions;
 
         if (
-          this.popoverState === TPopoverState.OPEN &&
+          this.popoverState === PopoverState.OPEN &&
           suggestions.length === 1 &&
           this.suggestion &&
           areSuggestionsSame(suggestions[0], this.suggestion)
@@ -332,7 +329,7 @@ export default class ImplementationSuggest<
       enrichmentEnabled,
     } = this.options;
 
-    const selectedSuggestion: ISuggestion<D> | null =
+    const selectedSuggestion: Suggestion<D> | null =
       this.suggestions[index] || null;
 
     // Do not let select current suggestion again.
@@ -344,7 +341,7 @@ export default class ImplementationSuggest<
       if (options?.continueSelecting) {
         input.setValue(`${input.getValue()} `);
       } else {
-        if (this.popoverState === TPopoverState.OPEN) {
+        if (this.popoverState === PopoverState.OPEN) {
           this.disposePopover();
         }
       }
@@ -352,8 +349,8 @@ export default class ImplementationSuggest<
     }
 
     // Selection can happen with closed popover
-    if (this.popoverState === TPopoverState.OPEN) {
-      this.setPopoverState(TPopoverState.SELECTING);
+    if (this.popoverState === PopoverState.OPEN) {
+      this.setPopoverState(PopoverState.SELECTING);
     }
 
     const selectedSuggestionValue: string | null =
@@ -365,7 +362,7 @@ export default class ImplementationSuggest<
       input.setValue(selectedSuggestionValue);
     }
 
-    new Promise<ISuggestion<D> | null>((resolve, reject) => {
+    new Promise<Suggestion<D> | null>((resolve, reject) => {
       if (
         selectedSuggestion &&
         !hasQualityCode(selectedSuggestion) &&
@@ -381,7 +378,7 @@ export default class ImplementationSuggest<
       .catch(() => selectedSuggestion)
       // If enrichment request returned empty list, continue with original suggestion
       .then((enrichedSuggestion) => enrichedSuggestion || selectedSuggestion)
-      .then((enrichedSuggestion: ISuggestion<D> | null) => {
+      .then((enrichedSuggestion: Suggestion<D> | null) => {
         this.setSuggestion(enrichedSuggestion);
 
         // Save enriched suggestion into the cache
@@ -413,14 +410,14 @@ export default class ImplementationSuggest<
 
         if (shouldContinueSelecting) {
           // Return popoverState to OPEN if popover exists
-          if (this.popoverState === TPopoverState.SELECTING) {
-            this.setPopoverState(TPopoverState.OPEN);
+          if (this.popoverState === PopoverState.SELECTING) {
+            this.setPopoverState(PopoverState.OPEN);
           }
 
           this.updatePopover();
         } else {
           // Popover can be closed by blur and open again during enrichment
-          if (this.popoverState === TPopoverState.SELECTING) {
+          if (this.popoverState === PopoverState.SELECTING) {
             this.disposePopover();
           }
         }

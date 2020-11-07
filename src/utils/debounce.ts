@@ -3,6 +3,15 @@ interface Debounced<A extends unknown[]> {
   cancel: () => void;
 }
 
+/**
+ * Create debounced function.
+ *
+ * Sequent calls will be accumulated and `fn` will be called `wait` ms after the last call.
+ * Debounced function has `cancel` method for canceling a waiting call of `fn`.
+ *
+ * @param {Function} fn
+ * @param {number} wait
+ */
 export const debounce = <A extends unknown[]>(
   fn: (...args: A) => unknown,
   wait: number

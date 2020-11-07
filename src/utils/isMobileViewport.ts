@@ -1,13 +1,8 @@
-export const isMaxWidthCorrect = (
-  mobileWidthThreshold: unknown
-): mobileWidthThreshold is number =>
-  typeof mobileWidthThreshold === "number" &&
-  // Number.isFinite is not supported in IE
-  isFinite(mobileWidthThreshold);
+import { isPositiveNumber } from "./isNumber";
 
 export const isMobileViewport = (
   viewport: Window,
   mobileWidthThreshold: number | null
 ): boolean =>
-  isMaxWidthCorrect(mobileWidthThreshold) &&
+  isPositiveNumber(mobileWidthThreshold) &&
   viewport.innerWidth <= mobileWidthThreshold;

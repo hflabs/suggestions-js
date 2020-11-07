@@ -1,13 +1,14 @@
-import Disposable from "../Disposable";
+import Disposable from "./Disposable";
 import { createElement } from "../utils/createElement";
 import { addClass, removeClass, toClassName } from "../utils/className";
 import classes from "./Popover.sass";
 import { throttle } from "../utils/throttle";
-import { isMobileViewport, isMaxWidthCorrect } from "../utils/isMobileViewport";
-import { IImplementationOptions } from "../types";
+import { isMobileViewport } from "../utils/isMobileViewport";
+import { InnerInitOptions } from "../types";
+import { isPositiveNumber } from "../utils/isNumber";
 
-type IFloaterOptions = Pick<
-  IImplementationOptions<unknown>,
+type FloaterInitOptions = Pick<
+  InnerInitOptions<unknown>,
   "classNames" | "mobileMaxWidth"
 >;
 
@@ -24,7 +25,7 @@ export default class Floater extends Disposable {
 
   constructor(
     private target: HTMLInputElement,
-    private options: IFloaterOptions
+    private options: FloaterInitOptions
   ) {
     super();
     this.mount();
@@ -102,7 +103,7 @@ export default class Floater extends Disposable {
     // Apply mobile styles on window resize
     const { mobileMaxWidth } = this.options;
 
-    if (isMaxWidthCorrect(mobileMaxWidth)) {
+    if (isPositiveNumber(mobileMaxWidth)) {
       let wasMobile = false;
       const throttledUpdateIsMobile = throttle(() => {
         const isMobile = isMobileViewport(window, mobileMaxWidth);

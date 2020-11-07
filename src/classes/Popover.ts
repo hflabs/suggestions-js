@@ -1,17 +1,17 @@
 import { addClass, removeClass, toClassName } from "../utils/className";
 import classes from "./Popover.sass";
-import promoSvg from "./promo.svg";
+import promoSvg from "../svg/promo.svg";
 import { createElement } from "../utils/createElement";
-import { IImplementationOptions } from "../types";
-import Disposable from "../Disposable";
+import { InnerInitOptions } from "../types";
+import Disposable from "./Disposable";
 import Floater from "./Floater";
 
 const PROMO_HREF =
   "https://dadata.ru/suggestions/?utm_source=dadata&utm_medium=module&utm_campaign=suggestions-jquery";
 
-export interface IPopoverOptions
+export interface PopoverOptions
   extends Pick<
-    IImplementationOptions<unknown>,
+    InnerInitOptions<unknown>,
     | "classNames"
     | "mobileMaxWidth"
     | "hint"
@@ -24,13 +24,17 @@ export interface IPopoverOptions
   onItemClick: (index: number) => void;
 }
 
+/**
+ * Maintain dropdown content.
+ * Render suggestions, highlight them.
+ */
 export default class Popover extends Disposable {
   private el: HTMLDivElement = this.initFloatingContainer();
   private items: HTMLDivElement[] = this.createItems(this.options.items);
 
   constructor(
     private target: HTMLInputElement,
-    private options: IPopoverOptions
+    private options: PopoverOptions
   ) {
     super();
     this.render();
@@ -118,17 +122,14 @@ export default class Popover extends Disposable {
   }
 
   private listenToMousedown() {
-    const {
-      el,
-      options: { onMousedown },
-    } = this;
+    const { onMousedown } = this.options;
 
     const handleMousedown = (e: MouseEvent) => {
       const { target } = e;
 
       if (!(target instanceof Element)) return;
 
-      if (target === el || el.contains(target)) {
+      if (target === this.el || this.el.contains(target)) {
         onMousedown();
       }
     };

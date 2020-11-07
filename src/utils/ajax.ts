@@ -1,26 +1,35 @@
-export interface IAjaxHeaders {
-  [name: string]: string;
-}
+import { isPositiveNumber } from "./isNumber";
 
-export interface IAjaxInit {
+export type AjaxHeaders = Record<string, string>;
+
+export interface AjaxInit {
   method?: string;
-  headers?: IAjaxHeaders;
+  headers?: AjaxHeaders;
   body?: unknown;
   timeout?: number;
 }
 
-export interface IAjaxResponse<B = void> {
+export interface AjaxResponse<Payload = void> {
   status: number;
   statusText: string;
-  headers: IAjaxHeaders;
-  body: B;
+  headers: AjaxHeaders;
+  body: Payload;
 }
 
-export const ajax = <P = unknown>(
+/**
+ * Perform ajax requests.
+ *
+ * Set content-type:application/json, respect it on responses
+ *
+ * @param {string} url
+ * @param {AjaxInit} [init]
+ * @return Promise<AjaxResponse>
+ */
+export const ajax = <Payload = unknown>(
   url: string,
-  init: IAjaxInit = {}
-): Promise<IAjaxResponse<P>> =>
-  new Promise<IAjaxResponse<P>>((resolve, reject) => {
+  init: AjaxInit = {}
+): Promise<AjaxResponse<Payload>> =>
+  new Promise<AjaxResponse<Payload>>((resolve, reject) => {
     if (typeof XMLHttpRequest !== "function") throw new Error("No transport");
 
     const xhr = new XMLHttpRequest();
@@ -46,20 +55,23 @@ export const ajax = <P = unknown>(
       xhr.setRequestHeader("Content-type", "application/json");
     }
 
-    const timeoutId =
-      typeof timeout === "number" &&
-      timeout > 0 &&
-      setTimeout(() => xhr.abort(), timeout);
+    const timeoutId = isPositiveNumber(timeout)
+      ? setTimeout(() => xhr.abort(), timeout)
+      : null;
 
     xhr.onabort = () => reject(new Error("abort"));
 
     xhr.onload = xhr.onerror = () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      try {
+        if (timeoutId) clearTimeout(timeoutId);
 
-      const { responseText, status, statusText } = xhr;
+        const { responseText, status, statusText } = xhr;
 
-      if (status > 0 && status < 400) {
-        const responseHeaders: IAjaxHeaders = xhr
+        if (!status || status >= 400) {
+          reject(new Error(statusText));
+        }
+
+        const responseHeaders: AjaxHeaders = xhr
           .getAllResponseHeaders()
           .split(/[\r\n]+/)
           .filter(Boolean)
@@ -76,10 +88,9 @@ export const ajax = <P = unknown>(
             ? JSON.parse(responseText)
             : responseText,
         });
-        return;
+      } catch (error) {
+        reject(error);
       }
-
-      reject(new Error(statusText));
     };
 
     xhr.send(String(body));

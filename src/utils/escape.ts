@@ -8,8 +8,7 @@ const htmlEntities: Record<string, RegExp> = {
 };
 
 /**
- * Заменяет амперсанд, угловые скобки и другие подобные символы
- * на HTML-коды
+ * Make string html-safe, ready to be passed to innerHTML
  */
 export const escapeHtml = (str: string): string =>
   Object.keys(htmlEntities).reduce(
@@ -18,8 +17,7 @@ export const escapeHtml = (str: string): string =>
   );
 
 /**
- * Эскейпирует символы RegExp-шаблона обратным слешем
- * (для передачи в конструктор регулярных выражений)
+ * Prepare string for passing to `new RegEpx()`.
  */
 export const escapeRegExChars = (str: string): string =>
   str.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");

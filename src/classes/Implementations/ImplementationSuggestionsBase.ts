@@ -1,16 +1,16 @@
-import { ISuggestions } from "../types";
+import { Suggestions } from "../../types";
 import ImplementationBase from "./ImplementationBase";
+import { ApiFetchSuggestionsMethods } from "../Api";
+import { isString } from "../../utils/isString";
 
 const ABORT_ERROR_MESSAGE = "Aborted by the next request";
 
-export default class ImplementationSuggestionsBase<
-  D
-> extends ImplementationBase<D> {
-  protected fetchSuggestionsApiMethod: "suggest" | "findById" = "suggest";
+abstract class ImplementationSuggestionsBase<D> extends ImplementationBase<D> {
+  protected fetchSuggestionsApiMethod: ApiFetchSuggestionsMethods = "suggest";
 
   private fetchSuggestionsCaches: Record<
     string,
-    Record<string, ISuggestions<D>>
+    Record<string, Suggestions<D>>
   > = {};
 
   /**
@@ -19,7 +19,7 @@ export default class ImplementationSuggestionsBase<
   protected fetchSuggestions(
     query: string,
     params?: Record<string, unknown>
-  ): Promise<ISuggestions<D>> {
+  ): Promise<Suggestions<D>> {
     const { preventBadQueries, noCache } = this.options;
 
     if (noCache) {
@@ -61,7 +61,7 @@ export default class ImplementationSuggestionsBase<
   private fetchSuggestionsFromApi(
     query: string,
     params?: Record<string, unknown>
-  ): Promise<ISuggestions<D>> {
+  ): Promise<Suggestions<D>> {
     const {
       api,
       onSearchError,
@@ -70,11 +70,11 @@ export default class ImplementationSuggestionsBase<
     } = this.options;
 
     const searchStartResult = onSearchStart?.(query, this.el);
-    if (typeof searchStartResult === "string") {
+    if (isString(searchStartResult)) {
       query = searchStartResult;
     }
 
-    const abortableRequest = new Promise<ISuggestions<D>>((resolve, reject) => {
+    const abortableRequest = new Promise<Suggestions<D>>((resolve, reject) => {
       // Abort pending fetching (not the request itself)
       if (this.abortCurrentFetch) {
         this.abortCurrentFetch();
@@ -83,7 +83,8 @@ export default class ImplementationSuggestionsBase<
       // Expose new abort callback
       this.abortCurrentFetch = () => reject(new Error(ABORT_ERROR_MESSAGE));
 
-      api[this.fetchSuggestionsApiMethod](query, params)
+      api
+        .fetchSuggestions(this.fetchSuggestionsApiMethod, query, params)
         .then(resolve, reject)
         .finally(() => {
           this.abortCurrentFetch = null;
@@ -104,3 +105,5 @@ export default class ImplementationSuggestionsBase<
     return abortableRequest;
   }
 }
+
+export default ImplementationSuggestionsBase;

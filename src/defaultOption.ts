@@ -1,6 +1,6 @@
-import { IInitOptions } from "./types";
+import { InitOptions } from "./types";
 
-export const defaultOptions: Omit<IInitOptions<any>, "type"> = {
+export const defaultOptions: Omit<InitOptions<unknown>, "type"> = {
   autoHighlightFirst: false,
   count: 5,
   deferRequestBy: 100,
@@ -10,9 +10,8 @@ export const defaultOptions: Omit<IInitOptions<any>, "type"> = {
   minLength: 1,
   mobileMaxWidth: 600,
   noCache: false,
-  noSuggestionsHint: "Продолжите ввод",
+  noSuggestionsHint: "Неизвестное значение",
   preventBadQueries: false,
-  requestMode: "suggest",
   requestParamName: "query",
   requestTimeout: 3000,
   scrollOnFocus: false,

@@ -1,15 +1,19 @@
 import { escapeHtml, escapeRegExChars } from "./escape";
+import { isPositiveNumber } from "./isNumber";
 
 const WORD_DELIMITERS = "\\s\"'~\\*\\.,:\\|\\[\\]\\(\\)\\{\\}<>№";
 const WORD_PARTS_DELIMITERS = "\\-\\+\\\\\\?!@#$%^&";
 const WORD_SPLITTER = new RegExp("[" + WORD_DELIMITERS + "]+", "g");
 const WORD_PARTS_SPLITTER = new RegExp("[" + WORD_PARTS_DELIMITERS + "]+", "g");
-// Регулярное выражение для разбивки строки на слова
 const WORD_EXTRACTOR = new RegExp(
   `([^${WORD_DELIMITERS}]*)([${WORD_DELIMITERS}]*)`,
   "g"
 );
 
+/**
+ * Makes token from a string
+ * @param token
+ */
 export const normalizeToken = (token: string): string =>
   token.toLowerCase().replace(/[ёЁ]/g, "е");
 
@@ -26,12 +30,13 @@ export const splitToTokens = (
     .filter(Boolean)
     .map(normalizeToken);
 
+  // Add word-parts as new tokens
   const withSubtokens: string[] = tokens.reduce((memo, token) => {
-    const subtokens = token.split(WORD_PARTS_SPLITTER);
-    return [...memo, token, ...(subtokens.length > 1 ? subtokens : [])];
+    const tokenParts = token.split(WORD_PARTS_SPLITTER);
+    return [...memo, token, ...(tokenParts.length > 1 ? tokenParts : [])];
   }, [] as string[]);
 
-  // Move unformattableTokens to the end.
+  // Move tokens from unformattableTokens to the end.
   // This will help to apply them only if no other tokens match
   if (unformattableTokens) {
     withSubtokens.sort((a, b) => {
@@ -45,17 +50,16 @@ export const splitToTokens = (
   return withSubtokens;
 };
 
-interface IValueChunk {
+const hasUpperCase = (s: string): boolean => s !== s.toLowerCase();
+
+export interface ValueChunk {
   text: string;
   token: string;
-  // upper case means a word is a name and can be highlighted even if presents in unformattableTokens
-  hasUpperCase: boolean;
   matched: boolean;
-  matchable: boolean;
 }
 
-export const splitToChunks = (value: string): IValueChunk[] => {
-  const result: IValueChunk[] = [];
+export const splitToChunks = (value: string): ValueChunk[] => {
+  const result: ValueChunk[] = [];
   let match: RegExpExecArray | null;
 
   WORD_EXTRACTOR.lastIndex = 0;
@@ -66,8 +70,6 @@ export const splitToChunks = (value: string): IValueChunk[] => {
       result.push({
         text: word,
         token: normalizeToken(word),
-        hasUpperCase: word.toLowerCase() !== word,
-        matchable: true,
         matched: false,
       });
 
@@ -75,8 +77,6 @@ export const splitToChunks = (value: string): IValueChunk[] => {
         result.push({
           text: delimeters,
           token: "",
-          hasUpperCase: false,
-          matchable: false,
           matched: false,
         });
       }
@@ -86,7 +86,7 @@ export const splitToChunks = (value: string): IValueChunk[] => {
   return result;
 };
 
-export const chunksToHtml = (chunks: IValueChunk[]): string =>
+export const chunksToHtml = (chunks: ValueChunk[]): string =>
   chunks
     .map((chunk) => {
       const text = escapeHtml(chunk.text);
@@ -112,94 +112,70 @@ export const highlightMatches = (
         "i"
       )
   );
-  const valueChunks = splitToChunks(value);
+  const initialValueChunks = splitToChunks(value);
 
-  // use simple loop because length can change
-  for (let i = 0; i < valueChunks.length; i++) {
-    const chunk = valueChunks[i];
-
+  const valueChunks = initialValueChunks.reduce((memo, chunk) => {
     if (
-      chunk.matchable &&
+      chunk.token &&
       !chunk.matched &&
       (!options?.unformattableTokens?.includes(chunk.token) ||
-        chunk.hasUpperCase)
+        // upper case means a word is a name and can be highlighted even if presents in unformattableTokens
+        hasUpperCase(chunk.text))
     ) {
-      queryTokenMatchers.some((matcher) => {
-        const tokenMatch = matcher.exec(chunk.token);
-        let length;
-        let nextIndex = i + 1;
+      // Try to search tokens within a chunk
+      const queryTokenMatcher = queryTokenMatchers.find((matcher) =>
+        matcher.test(chunk.token)
+      );
 
-        if (tokenMatch) {
-          const [
-            ,
-            before,
-            beforeText,
-            beforeDelimiter,
-            text,
-            after,
-          ] = tokenMatch;
+      if (queryTokenMatcher) {
+        const [, before, beforeText, beforeDelimiter, text, after] =
+          queryTokenMatcher.exec(chunk.token) || [];
+        const beforeLength = before?.length || 0;
+        const textLength = text.length;
+        const afterLength = after?.length || 0;
 
-          if (before) {
-            // insert chunk before current
-            valueChunks.splice(
-              i,
-              0,
-              {
-                text: chunk.text.substr(0, beforeText.length),
-                token: beforeText,
-                hasUpperCase: false,
-                matchable: true,
-                matched: false,
-              },
-              {
-                text: beforeDelimiter,
-                token: "",
-                hasUpperCase: false,
-                matchable: false,
-                matched: false,
-              }
-            );
-            nextIndex += 2;
+        const chunksToAdd: ValueChunk[] = [];
 
-            length = before.length;
-            chunk.text = chunk.text.substr(length);
-            chunk.token = chunk.token.substr(length);
-            i--;
-          }
-
-          length = text.length + after.length;
-          if (chunk.text.length > length) {
-            valueChunks.splice(nextIndex, 0, {
-              text: chunk.text.substr(length),
-              token: chunk.token.substr(length),
-              hasUpperCase: false,
-              matchable: true,
+        if (beforeLength) {
+          // insert chunks before current
+          if (beforeText) {
+            chunksToAdd.push({
+              text: chunk.text.substr(0, beforeText.length),
+              token: beforeText,
               matched: false,
             });
-            chunk.text = chunk.text.substr(0, length);
-            chunk.token = chunk.token.substr(0, length);
           }
 
-          if (after) {
-            length = text.length;
-            valueChunks.splice(nextIndex, 0, {
-              text: chunk.text.substr(length),
-              token: chunk.token.substr(length),
-              hasUpperCase: false,
-              matchable: false,
-              matched: false,
-            });
-            chunk.text = chunk.text.substr(0, length);
-            chunk.token = chunk.token.substr(0, length);
-          }
-          chunk.matched = true;
-          return true;
+          // beforeDelimiter can not be empty
+          chunksToAdd.push({
+            text: beforeDelimiter,
+            token: "",
+            matched: false,
+          });
         }
-      });
-    }
-  }
 
-  if (options?.maxLength) {
+        chunksToAdd.push({
+          text: chunk.text.substr(beforeLength, textLength),
+          token: chunk.token.substr(beforeLength, textLength),
+          matched: true,
+        });
+
+        if (afterLength) {
+          chunksToAdd.push({
+            text: chunk.text.substr(-afterLength),
+            token: chunk.token.substr(-afterLength),
+            matched: false,
+          });
+        }
+
+        return [...memo, ...chunksToAdd];
+      }
+    }
+
+    return [...memo, chunk];
+  }, [] as ValueChunk[]);
+
+  if (options && isPositiveNumber(options.maxLength)) {
     let lengthAvailable = options.maxLength;
 
     return chunksToHtml(
@@ -207,10 +183,12 @@ export const highlightMatches = (
         if (lengthAvailable <= 0) return memo;
 
         const length = chunk.text.length;
+
         if (length <= lengthAvailable) {
           lengthAvailable -= length;
           return [...memo, chunk];
         }
+
         return [
           ...memo,
           {
@@ -218,7 +196,7 @@ export const highlightMatches = (
             text: `${chunk.text.substr(0, lengthAvailable)}...`,
           },
         ];
-      }, [] as IValueChunk[])
+      }, [] as ValueChunk[])
     );
   }
 

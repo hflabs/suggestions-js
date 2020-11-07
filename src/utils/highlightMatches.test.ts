@@ -1,4 +1,5 @@
-import { splitToTokens, splitToChunks } from "./highlightMatches";
+import { splitToTokens, splitToChunks, ValueChunk } from "./highlightMatches";
+import { as } from "./as";
 
 describe("highlightMatches.ts", () => {
   describe("splitToTokens()", () => {
@@ -24,29 +25,25 @@ describe("highlightMatches.ts", () => {
 
   describe("splitToChunks()", () => {
     it("should split simple words", () => {
-      expect(splitToChunks("Москва, Кремль")).toEqual([
-        {
-          text: "Москва",
-          token: "москва",
-          hasUpperCase: true,
-          matchable: true,
-          matched: false,
-        },
-        {
-          text: ", ",
-          token: "",
-          hasUpperCase: false,
-          matchable: false,
-          matched: false,
-        },
-        {
-          text: "Кремль",
-          token: "кремль",
-          hasUpperCase: true,
-          matchable: true,
-          matched: false,
-        },
-      ]);
+      expect(splitToChunks("Москва, Кремль")).toEqual(
+        as<ValueChunk[]>([
+          {
+            text: "Москва",
+            token: "москва",
+            matched: false,
+          },
+          {
+            text: ", ",
+            token: "",
+            matched: false,
+          },
+          {
+            text: "Кремль",
+            token: "кремль",
+            matched: false,
+          },
+        ])
+      );
     });
   });
 });
