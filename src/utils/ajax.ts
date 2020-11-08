@@ -1,4 +1,5 @@
 import { isPositiveNumber } from "./isNumber";
+import { ERROR_AJAX_TIMEOUT, ERROR_AJAX_UNAVAILABLE } from "../errors";
 
 export type AjaxHeaders = Record<string, string>;
 
@@ -16,6 +17,15 @@ export interface AjaxResponse<Payload = void> {
   body: Payload;
 }
 
+export const parseHeaders = (allHeaders: string): AjaxHeaders =>
+  allHeaders
+    .split(/[\r\n]+/)
+    .filter(Boolean)
+    .reduce((memo, header) => {
+      const [name, ...value] = header.split(": ");
+      return { ...memo, [name.toLowerCase()]: value.join(": ") };
+    }, {});
+
 /**
  * Perform ajax requests.
  *
@@ -30,7 +40,9 @@ export const ajax = <Payload = unknown>(
   init: AjaxInit = {}
 ): Promise<AjaxResponse<Payload>> =>
   new Promise<AjaxResponse<Payload>>((resolve, reject) => {
-    if (typeof XMLHttpRequest !== "function") throw new Error("No transport");
+    if (typeof XMLHttpRequest !== "function") {
+      throw new Error(ERROR_AJAX_UNAVAILABLE);
+    }
 
     const xhr = new XMLHttpRequest();
     const { method, headers, timeout } = init;
@@ -59,7 +71,7 @@ export const ajax = <Payload = unknown>(
       ? setTimeout(() => xhr.abort(), timeout)
       : null;
 
-    xhr.onabort = () => reject(new Error("abort"));
+    xhr.onabort = () => reject(new Error(ERROR_AJAX_TIMEOUT));
 
     xhr.onload = xhr.onerror = () => {
       try {
@@ -71,14 +83,9 @@ export const ajax = <Payload = unknown>(
           reject(new Error(statusText));
         }
 
-        const responseHeaders: AjaxHeaders = xhr
-          .getAllResponseHeaders()
-          .split(/[\r\n]+/)
-          .filter(Boolean)
-          .reduce((memo, header) => {
-            const [name, ...value] = header.split(": ");
-            return { ...memo, [name.toLowerCase()]: value.join(": ") };
-          }, {});
+        const responseHeaders: AjaxHeaders = parseHeaders(
+          xhr.getAllResponseHeaders()
+        );
 
         resolve({
           status,
@@ -93,5 +100,5 @@ export const ajax = <Payload = unknown>(
       }
     };
 
-    xhr.send(String(body));
+    xhr.send(body === null || body === undefined ? "" : String(body));
   });

@@ -61,7 +61,7 @@ const config = {
     }),
   ],
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".d.ts", ".js"],
   },
 };
 

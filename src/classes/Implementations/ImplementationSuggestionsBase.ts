@@ -1,17 +1,27 @@
-import { Suggestions } from "../../types";
+import { RequestSuggestionsMethod, Suggestions } from "../../types";
 import ImplementationBase from "./ImplementationBase";
-import { ApiFetchSuggestionsMethods } from "../Api";
-import { isString } from "../../utils/isString";
-
-const ABORT_ERROR_MESSAGE = "Aborted by the next request";
+import { queuedPromiseFactory } from "../../utils/queuedPromiseFactory";
+import { ERROR_FETCH_ABORTED } from "../../errors";
 
 abstract class ImplementationSuggestionsBase<D> extends ImplementationBase<D> {
-  protected fetchSuggestionsApiMethod: ApiFetchSuggestionsMethods = "suggest";
+  protected fetchSuggestionsApiMethod: RequestSuggestionsMethod = "suggest";
 
   private fetchSuggestionsCaches: Record<
     string,
     Record<string, Suggestions<D>>
   > = {};
+
+  private fetchSuggestionsFromApi = this.triggeringSearchCallbacks(
+    queuedPromiseFactory(
+      (adjustedQuery: string, params?: Record<string, unknown>) =>
+        this.options.api.fetchSuggestions(
+          this.fetchSuggestionsApiMethod,
+          adjustedQuery,
+          params
+        ),
+      () => new Error(ERROR_FETCH_ABORTED)
+    )
+  );
 
   /**
    * Fetch suggestions or take them from cache
@@ -54,55 +64,6 @@ abstract class ImplementationSuggestionsBase<D> extends ImplementationBase<D> {
       ] = suggestions;
       return suggestions;
     });
-  }
-
-  private abortCurrentFetch: (() => void) | null = null;
-
-  private fetchSuggestionsFromApi(
-    query: string,
-    params?: Record<string, unknown>
-  ): Promise<Suggestions<D>> {
-    const {
-      api,
-      onSearchError,
-      onSearchStart,
-      onSearchComplete,
-    } = this.options;
-
-    const searchStartResult = onSearchStart?.(query, this.el);
-    if (isString(searchStartResult)) {
-      query = searchStartResult;
-    }
-
-    const abortableRequest = new Promise<Suggestions<D>>((resolve, reject) => {
-      // Abort pending fetching (not the request itself)
-      if (this.abortCurrentFetch) {
-        this.abortCurrentFetch();
-      }
-
-      // Expose new abort callback
-      this.abortCurrentFetch = () => reject(new Error(ABORT_ERROR_MESSAGE));
-
-      api
-        .fetchSuggestions(this.fetchSuggestionsApiMethod, query, params)
-        .then(resolve, reject)
-        .finally(() => {
-          this.abortCurrentFetch = null;
-        });
-    });
-
-    abortableRequest.then(
-      (suggestions) => {
-        onSearchComplete?.(query, suggestions, this.el);
-      },
-      (error) => {
-        if (error.message !== ABORT_ERROR_MESSAGE) {
-          onSearchError?.(error, query, this.el);
-        }
-      }
-    );
-
-    return abortableRequest;
   }
 }
 

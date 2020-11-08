@@ -64,7 +64,7 @@ export const splitToChunks = (value: string): ValueChunk[] => {
 
   WORD_EXTRACTOR.lastIndex = 0;
   while ((match = WORD_EXTRACTOR.exec(value)) && match[0]) {
-    const [, word, delimeters] = match;
+    const [, word, delimiters] = match;
 
     if (word) {
       result.push({
@@ -72,14 +72,14 @@ export const splitToChunks = (value: string): ValueChunk[] => {
         token: normalizeToken(word),
         matched: false,
       });
+    }
 
-      if (delimeters) {
-        result.push({
-          text: delimeters,
-          token: "",
-          matched: false,
-        });
-      }
+    if (delimiters) {
+      result.push({
+        text: delimiters,
+        token: "",
+        matched: false,
+      });
     }
   }
 
@@ -94,31 +94,29 @@ export const chunksToHtml = (chunks: ValueChunk[]): string =>
     })
     .join("");
 
-export const highlightMatches = (
-  value: string,
-  query: string,
-  options?: {
-    unformattableTokens?: string[];
-    maxLength?: number;
-  }
-): string => {
-  const queryTokens = splitToTokens(query, options?.unformattableTokens);
-  const queryTokenMatchers = queryTokens.map(
-    (token) =>
-      new RegExp(
-        `^((.*)([${WORD_PARTS_DELIMITERS}]+))?(${escapeRegExChars(
-          token
-        )})([^${WORD_PARTS_DELIMITERS}]*[${WORD_PARTS_DELIMITERS}]*)`,
-        "i"
-      )
-  );
-  const initialValueChunks = splitToChunks(value);
-
-  const valueChunks = initialValueChunks.reduce((memo, chunk) => {
+/**
+ * Search for query tokens within each chunk.
+ *
+ * If all the chunk's text matches some token, mark this chunk as `matched`.
+ * If a part of chunk's text matches some token, split chunk into several chunks, one of which is `matched`.
+ *
+ * @param {number} matchedCount
+ * @param {ValueChunk[]} chunks
+ * @param {RegExp[]} queryTokenMatchers
+ * @param {string[]} [unformattableTokens]
+ * @return {ValueChunk[]}
+ */
+export const findMatchesInChunks = (
+  chunks: ValueChunk[],
+  matchedCount: number,
+  queryTokenMatchers: RegExp[],
+  unformattableTokens?: string[]
+): ValueChunk[] => {
+  const nextChunks = chunks.reduce((memo, chunk) => {
     if (
       chunk.token &&
       !chunk.matched &&
-      (!options?.unformattableTokens?.includes(chunk.token) ||
+      (!unformattableTokens?.includes(chunk.token) ||
         // upper case means a word is a name and can be highlighted even if presents in unformattableTokens
         hasUpperCase(chunk.text))
     ) {
@@ -129,10 +127,12 @@ export const highlightMatches = (
 
       if (queryTokenMatcher) {
         const [, before, beforeText, beforeDelimiter, text, after] =
-          queryTokenMatcher.exec(chunk.token) || [];
+          // tokenMatcher was checked in previous .find()
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          queryTokenMatcher.exec(chunk.token)!;
         const beforeLength = before?.length || 0;
         const textLength = text.length;
-        const afterLength = after?.length || 0;
+        const afterLength = after.length;
 
         const chunksToAdd: ValueChunk[] = [];
 
@@ -162,8 +162,8 @@ export const highlightMatches = (
 
         if (afterLength) {
           chunksToAdd.push({
-            text: chunk.text.substr(-afterLength),
-            token: chunk.token.substr(-afterLength),
+            text: chunk.text.substr(beforeLength + textLength),
+            token: chunk.token.substr(beforeLength + textLength),
             matched: false,
           });
         }
@@ -174,6 +174,44 @@ export const highlightMatches = (
 
     return [...memo, chunk];
   }, [] as ValueChunk[]);
+  const nextMatchedCount = nextChunks.filter((chunk) => chunk.matched).length;
+
+  return nextMatchedCount === matchedCount
+    ? nextChunks
+    : // If matches were found, new chunks might have been added, so check again to search within them.
+      findMatchesInChunks(
+        nextChunks,
+        nextMatchedCount,
+        queryTokenMatchers,
+        unformattableTokens
+      );
+};
+
+export const highlightMatches = (
+  value: string,
+  query: string,
+  options?: {
+    unformattableTokens?: string[];
+    maxLength?: number;
+  }
+): string => {
+  const queryTokens = splitToTokens(query, options?.unformattableTokens);
+  const queryTokenMatchers = queryTokens.map(
+    (token) =>
+      new RegExp(
+        `^((.*)([${WORD_PARTS_DELIMITERS}]+))?(${escapeRegExChars(
+          token
+        )})([^${WORD_PARTS_DELIMITERS}]*[${WORD_PARTS_DELIMITERS}]*)`,
+        "i"
+      )
+  );
+
+  const valueChunks = findMatchesInChunks(
+    splitToChunks(value),
+    0,
+    queryTokenMatchers,
+    options?.unformattableTokens
+  );
 
   if (options && isPositiveNumber(options.maxLength)) {
     let lengthAvailable = options.maxLength;
@@ -189,13 +227,17 @@ export const highlightMatches = (
           return [...memo, chunk];
         }
 
-        return [
+        const result = [
           ...memo,
           {
             ...chunk,
             text: `${chunk.text.substr(0, lengthAvailable)}...`,
           },
         ];
+
+        lengthAvailable = 0;
+
+        return result;
       }, [] as ValueChunk[])
     );
   }

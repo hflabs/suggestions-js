@@ -187,11 +187,11 @@
             onSelect: (...a) => {
                 const suggestion = a[0];
                 console.log('onSelect', suggestion.value, a);
-                selectedData.innerText = JSON.stringify(suggestion, null, 2)
+                selectedData.textContent = JSON.stringify(suggestion, null, 2)
             },
             onSelectNothing: (...a) => {
                 console.log('onSelectNothing', a);
-                selectedData.innerText = ''
+                selectedData.textContent = ''
             },
             onInvalidateSelection: (...a) => {
                 console.log('onInvalidateSelection', a);

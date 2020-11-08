@@ -1,17 +1,24 @@
-import { InitOptions, Status, StatusPlan, Suggestions } from "../types";
+import {
+  InitOptions,
+  RequestSuggestionsMethod,
+  Status,
+  StatusPlan,
+  Suggestions,
+} from "../types";
 import { ajax, AjaxInit, AjaxResponse } from "../utils/ajax";
 import { isPositiveNumber } from "../utils/isNumber";
+import { noop } from "../utils/noop";
+import { ERROR_SERVICE_UNAVAILABLE } from "../errors";
 
 export interface ApiResponseSuggestions<D> {
   suggestions: Suggestions<D>;
 }
 
-export type ApiFetchSuggestionsMethods = "suggest" | "findById";
-
 export type ApiInitOption<D> = Pick<
   InitOptions<D>,
   | "count"
   | "language"
+  | "noCache"
   | "partner"
   | "requestHeaders"
   | "requestParamName"
@@ -24,7 +31,13 @@ export type ApiInitOption<D> = Pick<
 >;
 
 export default class Api<D> {
-  static pendingQueries: Record<string, Promise<AjaxResponse<unknown>>> = {};
+  private static pendingQueries: Record<
+    string,
+    Promise<AjaxResponse<unknown>>
+  > = {};
+  public static resetPendingQueries = (): void => {
+    Api.pendingQueries = {};
+  };
 
   private correctCount = this.getCorrectCount();
   private typeUrl: string = this.options.type.toLowerCase();
@@ -36,6 +49,7 @@ export default class Api<D> {
     init?: AjaxInit
   ): Promise<AjaxResponse<T>> {
     const {
+      noCache,
       partner,
       requestHeaders,
       requestTimeout,
@@ -63,23 +77,39 @@ export default class Api<D> {
     if (token) headers["Authorization"] = `Token ${token}`;
     if (partner) headers["X-Partner"] = partner;
 
-    const requestKey = JSON.stringify([url, init]);
-
-    return (
-      (Api.pendingQueries[requestKey] as Promise<AjaxResponse<T>>) ||
-      (Api.pendingQueries[requestKey] = ajax<T>(url, {
+    const doRequest = () =>
+      ajax<T>(url, {
         ...init,
         headers: { ...headers, ...init?.headers },
         timeout: requestTimeout,
-      }))
-    );
+      });
+
+    if (noCache) return doRequest();
+
+    const requestKey = JSON.stringify([url, init]);
+    const pendingRequest = Api.pendingQueries[requestKey] as
+      | Promise<AjaxResponse<T>>
+      | undefined;
+
+    if (pendingRequest) return pendingRequest;
+
+    const request = doRequest();
+
+    Api.pendingQueries[requestKey] = request;
+    request
+      .finally(() => {
+        delete Api.pendingQueries[requestKey];
+      })
+      .catch(noop);
+
+    return request;
   }
 
   public status(): Promise<Status> {
     return this.fetch<Status>(`status/${this.typeUrl}`).then((response) => {
       const { body: status, headers } = response;
 
-      if (!status.search) throw new Error("Service Unavailable");
+      if (!status.search) throw new Error(ERROR_SERVICE_UNAVAILABLE);
 
       const xPlan = headers["x-plan"];
 
@@ -90,15 +120,16 @@ export default class Api<D> {
   }
 
   public fetchSuggestions(
-    method: ApiFetchSuggestionsMethods,
+    method: RequestSuggestionsMethod,
     query: string,
     params?: Record<string, unknown>
   ): Promise<Suggestions<D>> {
-    const { language, requestParamName } = this.options;
+    const { language, requestParamName, requestParams } = this.options;
 
     return this.fetch<ApiResponseSuggestions<D>>(`${method}/${this.typeUrl}`, {
       method: "POST",
       body: {
+        ...requestParams,
         [requestParamName]: query,
         count: this.correctCount,
         language,

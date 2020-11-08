@@ -4,7 +4,7 @@
  * This is a basic mode, it supports fetching suggestions from backend and passing them to callbacks.
  */
 
-import { InitOptions, PickMethods } from "../types";
+import { FunctionPropertyNames, InitOptions } from "../types";
 import ImplementationFindById from "../classes/Implementations/ImplementationFindById";
 import { execInstanceMethod, initInstance } from "../instances";
 
@@ -28,7 +28,9 @@ export const init = <D = unknown>(
  */
 export const execMethod = <
   SuggestionDataType,
-  Methods extends keyof PickMethods<ImplementationFindById<SuggestionDataType>>
+  Methods extends FunctionPropertyNames<
+    ImplementationFindById<SuggestionDataType>
+  >
 >(
   el: HTMLInputElement,
   method: Methods,

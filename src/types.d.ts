@@ -4,17 +4,17 @@
 
 import { ParsedUrlQueryInput } from "querystring";
 
-/**
- * Pick properties that are functions
- */
-export type PickMethods<T> = Pick<
-  T,
-  {
-    [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? K : never;
-  }[keyof T]
->;
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html
+export type FunctionPropertyNames<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
+}[keyof T];
+
+export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 
 export type InitType = "address" | "fio" | "party" | "email" | "bank" | string;
+
+export type RequestSuggestionsMethod = "suggest" | "findById";
 
 /**
  * Options used by inner classes
@@ -25,6 +25,7 @@ export interface InnerInitOptions<D> {
     input?: string;
     popover?: string;
     hint?: string;
+    list?: string;
     item?: string;
   };
   count: number;
@@ -40,10 +41,13 @@ export interface InnerInitOptions<D> {
   mobileMaxWidth: number;
   noCache: boolean;
   noSuggestionsHint: string;
-  onInvalidateSelection?: (suggestion: Suggestion<D>) => void;
+  onInvalidateSelection?: (
+    suggestion: Suggestion<D>,
+    el: HTMLInputElement
+  ) => void;
   onSearchComplete?: (
-    query: string,
     suggestions: Suggestions<D>,
+    query: string,
     el: HTMLInputElement
   ) => void;
   onSearchError?: (
@@ -59,7 +63,7 @@ export interface InnerInitOptions<D> {
   ) => void;
   onSelectNothing?: (query: string, el: HTMLInputElement) => void;
   partner?: string;
-  preventBadQueries: false;
+  preventBadQueries: boolean;
   renderSuggestion?: (
     suggestion: Suggestion<D>,
     query: string,
@@ -71,7 +75,7 @@ export interface InnerInitOptions<D> {
   requestHeaders?: Record<string, string>;
   requestParamName: string;
   requestParams?: ParsedUrlQueryInput;
-  requestTimeout: number;
+  requestTimeout?: number;
   requestToken?: string;
   // url, который заменяет serviceUrl + method + type
   // то есть, если он задан, то для всех запросов будет использоваться именно он
@@ -87,6 +91,10 @@ export interface InnerInitOptions<D> {
   type: InitType;
   unformattableTokens?: string[];
 }
+
+export type InnerInitFunctionalOptionNames = FunctionPropertyNames<
+  Required<InnerInitOptions<unknown>>
+>;
 
 /**
  * Options exposed for initializing

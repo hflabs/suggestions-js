@@ -1,14 +1,15 @@
 import Popover from "../Popover";
 import { highlightMatches } from "../../utils/highlightMatches";
-import { noop } from "../../utils/noop";
 import { Suggestion, Suggestions } from "../../types";
 import { isMobileViewport } from "../../utils/isMobileViewport";
 import { isCursorAtEnd, setCursorAtEnd } from "../../utils/cursor";
 import { scrollToTop } from "../../utils/scrollToTop";
 import ImplementationSuggestionsBase from "./ImplementationSuggestionsBase";
 import { EVENT_INPUT_CHANGE } from "../Input";
-import { areSuggestionsSame, hasQualityCode } from "../../utils/suggestion";
+import { hasQualityCode } from "../../utils/suggestion";
 import { ImplementationBaseOptions } from "./ImplementationBase";
+import { deepEqual } from "../../utils/deepEqual";
+import { noop } from "../../utils/noop";
 
 enum PopoverState {
   CLOSED,
@@ -71,9 +72,11 @@ export default class ImplementationSuggest<
 
   private getMatchedHighlightIndex(): number {
     if (this.suggestions.length) {
-      if (this.suggestion) {
+      const currentSuggestion = this.getCurrentSuggestion();
+
+      if (currentSuggestion) {
         const sameAsCurrentSuggestion = this.suggestions.find((suggestion) =>
-          areSuggestionsSame(suggestion, this.suggestion)
+          deepEqual(suggestion, currentSuggestion)
         );
 
         if (sameAsCurrentSuggestion) {
@@ -99,21 +102,20 @@ export default class ImplementationSuggest<
   private listenToInput() {
     const {
       input,
+      helperElements,
       mobileMaxWidth,
       scrollOnFocus,
       triggerSelectOnBlur,
       triggerSelectOnEnter,
       triggerSelectOnSpace,
-      onInvalidateSelection,
     } = this.options;
 
     const handleChange = () => {
-      if (this.suggestion) {
-        const suggestion = this.suggestion;
-        this.suggestion = null;
-
-        onInvalidateSelection?.(suggestion);
+      // Invalidate current selection
+      if (this.getCurrentSuggestion()) {
+        this.setCurrentSuggestion(null);
       }
+
       this.updatePopover();
     };
 
@@ -154,7 +156,7 @@ export default class ImplementationSuggest<
         case " ":
           if (
             triggerSelectOnSpace &&
-            isCursorAtEnd(this.el) &&
+            isCursorAtEnd(this.el, true) &&
             this.popoverState === PopoverState.OPEN
           ) {
             e.preventDefault();
@@ -175,13 +177,25 @@ export default class ImplementationSuggest<
       }
     };
 
-    const handleBlur = () => {
-      if (!this.shouldIgnoreBlur) {
+    const handleBlur = (e: FocusEvent) => {
+      const { relatedTarget } = e;
+      const shouldIgnore =
+        this.shouldIgnoreBlur ||
+        // Ignore blur when focusing one of helperElements
+        (helperElements &&
+          relatedTarget instanceof Element &&
+          Array.from(helperElements).some(
+            (helperElement) =>
+              helperElement === relatedTarget ||
+              helperElement.contains(relatedTarget)
+          ));
+
+      if (!shouldIgnore) {
         if (
           triggerSelectOnBlur &&
           this.popoverState !== PopoverState.OPENING &&
           this.popoverState !== PopoverState.SELECTING &&
-          this.isQueryRequestable(input.getValue())
+          this.isQueryRequestable(input.getValue().trim())
         ) {
           this.select(this.highlightIndex);
         }
@@ -211,9 +225,10 @@ export default class ImplementationSuggest<
 
           if (
             target instanceof Element &&
-            Array.prototype.slice
-              .call(helperElements)
-              .some((el) => el === target || el.contains(target))
+            Array.from(helperElements).some(
+              (helperElement) =>
+                helperElement === target || helperElement.contains(target)
+            )
           ) {
             this.ignoreNextBlur();
           }
@@ -284,11 +299,11 @@ export default class ImplementationSuggest<
       .then((suggestions) => {
         this.suggestions = suggestions;
 
+        // List contains only one suggestion, matching a current
         if (
           this.popoverState === PopoverState.OPEN &&
           suggestions.length === 1 &&
-          this.suggestion &&
-          areSuggestionsSame(suggestions[0], this.suggestion)
+          deepEqual(suggestions[0], this.getCurrentSuggestion())
         ) {
           this.disposePopover();
           return;
@@ -336,7 +351,7 @@ export default class ImplementationSuggest<
     // Comparing by reference can not work because suggestion could be fetched in different requests.
     if (
       selectedSuggestion &&
-      areSuggestionsSame(selectedSuggestion, this.suggestion)
+      deepEqual(selectedSuggestion, this.getCurrentSuggestion())
     ) {
       if (options?.continueSelecting) {
         input.setValue(`${input.getValue()} `);
@@ -365,7 +380,7 @@ export default class ImplementationSuggest<
     new Promise<Suggestion<D> | null>((resolve, reject) => {
       if (
         selectedSuggestion &&
-        !hasQualityCode(selectedSuggestion) &&
+        !hasQualityCode(selectedSuggestion.data) &&
         enrichmentEnabled &&
         !options?.continueSelecting
       ) {
@@ -379,7 +394,7 @@ export default class ImplementationSuggest<
       // If enrichment request returned empty list, continue with original suggestion
       .then((enrichedSuggestion) => enrichedSuggestion || selectedSuggestion)
       .then((enrichedSuggestion: Suggestion<D> | null) => {
-        this.setSuggestion(enrichedSuggestion);
+        this.setCurrentSuggestion(enrichedSuggestion);
 
         // Save enriched suggestion into the cache
         if (enrichedSuggestion) {

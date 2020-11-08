@@ -75,4 +75,15 @@ describe("throttle", () => {
 
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it("should do nothing on cancel before any calls", () => {
+    const fn = jest.fn((a: unknown) => a);
+    const throttled = throttle(fn, 10);
+
+    throttled.cancel();
+
+    jest.runAllTimers();
+
+    expect(fn).toHaveBeenCalledTimes(0);
+  });
 });

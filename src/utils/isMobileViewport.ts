@@ -1,7 +1,7 @@
 import { isPositiveNumber } from "./isNumber";
 
 export const isMobileViewport = (
-  viewport: Window,
+  viewport: Pick<Window, "innerWidth">,
   mobileWidthThreshold: number | null
 ): boolean =>
   isPositiveNumber(mobileWidthThreshold) &&

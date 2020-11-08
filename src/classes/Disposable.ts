@@ -32,7 +32,7 @@ abstract class Disposable {
     ms?: number,
     ...fnArgs: unknown[]
   ): number {
-    const timeoutId = window.setTimeout(fn, ms, ...fnArgs);
+    const timeoutId = setTimeout(fn, ms, ...fnArgs);
     this.onDispose(() => clearTimeout(timeoutId));
     return timeoutId;
   }
@@ -50,7 +50,7 @@ abstract class Disposable {
     ms?: number,
     ...fnArgs: unknown[]
   ): number {
-    const intervalId = window.setInterval(fn, ms, ...fnArgs);
+    const intervalId = setInterval(fn, ms, ...fnArgs);
     this.onDispose(() => clearInterval(intervalId));
     return intervalId;
   }

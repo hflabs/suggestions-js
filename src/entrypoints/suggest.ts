@@ -4,7 +4,7 @@
  * It is a default module of the package. Allows selecting suggestions in a dropdown.
  */
 
-import { InitOptions, PickMethods } from "../types";
+import { FunctionPropertyNames, InitOptions } from "../types";
 import { execInstanceMethod, initInstance } from "../instances";
 import ImplementationSuggest from "../classes/Implementations/ImplementationSuggest";
 
@@ -29,7 +29,9 @@ export const init = <SuggestionDataType = unknown>(
  */
 export const execMethod = <
   SuggestionDataType,
-  Methods extends keyof PickMethods<ImplementationSuggest<SuggestionDataType>>
+  Methods extends FunctionPropertyNames<
+    ImplementationSuggest<SuggestionDataType>
+  >
 >(
   el: HTMLInputElement,
   method: Methods,

@@ -1,8 +1,17 @@
 import Disposable from "../Disposable";
-import { InnerInitOptions, Suggestion, StatusPlan } from "../../types";
-import Api, { ApiFetchSuggestionsMethods } from "../Api";
+import {
+  InnerInitOptions,
+  RequestSuggestionsMethod,
+  StatusPlan,
+  Suggestion,
+  Suggestions,
+} from "../../types";
+import Api from "../Api";
 import Input from "../Input";
-import { areSuggestionsSame } from "../../utils/suggestion";
+import { deepEqual } from "../../utils/deepEqual";
+import { isPositiveNumber } from "../../utils/isNumber";
+import { isString } from "../../utils/isString";
+import { ERROR_DISPOSED, ERROR_FETCH_ABORTED } from "../../errors";
 
 export interface ImplementationBaseOptions<D> extends InnerInitOptions<D> {
   api: Api<D>;
@@ -18,8 +27,8 @@ export interface ImplementationBaseConstructor<D> {
 }
 
 abstract class ImplementationBase<D> extends Disposable {
-  protected fetchSuggestionApiMethod: ApiFetchSuggestionsMethods = "findById";
-  protected suggestion: Suggestion<D> | null = null;
+  protected fetchSuggestionApiMethod: RequestSuggestionsMethod = "findById";
+  private currentSuggestion: Suggestion<D> | null = null;
 
   constructor(
     protected el: HTMLInputElement,
@@ -32,42 +41,36 @@ abstract class ImplementationBase<D> extends Disposable {
    * Restores suggestion object for current input's value.
    */
   public fixData(): Promise<Suggestion<D> | null> {
-    const { input, onSelect } = this.options;
-    const trimmedQuery = input.getValue().trim();
+    const { input } = this.options;
+    const query = input.getValue().trim();
 
     return new Promise<Suggestion<D> | null>((resolve, reject) => {
-      this.onDispose(() =>
-        reject(
-          new Error("Suggestions has been disposed while data was been fetched")
-        )
-      );
+      this.onDispose(() => reject(new Error(ERROR_DISPOSED)));
 
-      if (this.isQueryRequestable(trimmedQuery)) {
-        this.fetchSuggestion(trimmedQuery).then((suggestion) => {
-          if (suggestion) {
-            input.setValue(suggestion.value);
-            onSelect?.(suggestion, false, this.el);
-          } else {
-            input.setValue("");
-          }
-
-          this.suggestion = suggestion;
-          reject(suggestion);
-        }, reject);
-      } else {
-        resolve(null);
-      }
+      Promise.resolve(
+        this.isQueryRequestable(query)
+          ? this.fetchSuggestion(query).then((suggestion) => {
+              input.setValue(suggestion ? suggestion.value : "");
+              return suggestion;
+            })
+          : null
+      )
+        .then((suggestion) => {
+          this.setCurrentSuggestion(suggestion);
+          resolve(suggestion);
+        })
+        .catch(reject);
     });
   }
 
   protected isQueryRequestable(query: string): boolean {
-    const { isQueryRequestable } = this.options;
+    const { isQueryRequestable, minLength } = this.options;
 
     if (isQueryRequestable) {
       return isQueryRequestable(query);
     }
 
-    return query.length >= this.options.minLength;
+    return !isPositiveNumber(minLength) || query.length >= minLength;
   }
 
   /**
@@ -75,7 +78,7 @@ abstract class ImplementationBase<D> extends Disposable {
    * @param suggestion
    * @protected
    */
-  protected setSuggestion(suggestion: Suggestion<D> | null): void {
+  protected setCurrentSuggestion(suggestion: Suggestion<D> | null): void {
     const {
       input,
       onInvalidateSelection,
@@ -84,18 +87,22 @@ abstract class ImplementationBase<D> extends Disposable {
     } = this.options;
 
     if (suggestion) {
-      if (!areSuggestionsSame(suggestion, this.suggestion)) {
+      if (!deepEqual(suggestion, this.currentSuggestion)) {
         onSelect?.(suggestion, true, this.el);
       }
     } else {
-      if (this.suggestion) {
-        onInvalidateSelection?.(this.suggestion);
+      if (this.currentSuggestion) {
+        onInvalidateSelection?.(this.currentSuggestion, this.el);
       } else {
         onSelectNothing?.(input.getValue(), this.el);
       }
     }
 
-    this.suggestion = suggestion;
+    this.currentSuggestion = suggestion;
+  }
+
+  protected getCurrentSuggestion(): Suggestion<D> | null {
+    return this.currentSuggestion;
   }
 
   /**
@@ -114,6 +121,48 @@ abstract class ImplementationBase<D> extends Disposable {
         count: 1,
       })
       .then((suggestions) => suggestions[0] || null);
+  }
+
+  protected triggeringSearchCallbacks<
+    R extends Suggestions<D> | Suggestion<D> | null
+  >(
+    fn: (
+      this: ImplementationBase<D>,
+      query: string,
+      params?: Record<string, unknown>
+    ) => Promise<R>
+  ): (query: string, params?: Record<string, unknown>) => Promise<R> {
+    const { onSearchError, onSearchStart, onSearchComplete } = this.options;
+
+    return (query: string, params?: Record<string, unknown>) => {
+      const searchStartResult = onSearchStart?.(query, this.el);
+      const adjustedQuery = isString(searchStartResult)
+        ? searchStartResult
+        : query;
+
+      const request = fn.call(this, adjustedQuery, params);
+
+      request.then(
+        (result) => {
+          onSearchComplete?.(
+            result instanceof Array
+              ? result
+              : result
+              ? [result as Suggestion<D>]
+              : [],
+            adjustedQuery,
+            this.el
+          );
+        },
+        (error) => {
+          if (error.message !== ERROR_FETCH_ABORTED) {
+            onSearchError?.(error, adjustedQuery, this.el);
+          }
+        }
+      );
+
+      return request;
+    };
   }
 }
 

@@ -41,15 +41,6 @@ export default class Input extends Disposable {
   }
 
   public getValue(): string {
-    // Due to currentValue is updated with some delay (options.deferRequestBy),
-    // check is once more then it is required
-    const { value } = this.el;
-
-    if (value !== this.lastValue && value !== this.suggestedValue) {
-      this.lastValue = value;
-      this.el.dispatchEvent(new Event(EVENT_INPUT_CHANGE));
-    }
-
     return this.lastValue;
   }
 
@@ -111,16 +102,16 @@ export default class Input extends Disposable {
   }
 
   private observeVisibility() {
-    let onVisibleDispatched = false;
+    let isVisibleDispatched = false;
     const dispatchIsVisible = () => {
       this.el.dispatchEvent(new Event(EVENT_INPUT_VISIBLE));
-      onVisibleDispatched = true;
+      isVisibleDispatched = true;
     };
 
     // The best strategy is to use IntersectionObserver
     if (typeof IntersectionObserver === "function") {
       const observer = new IntersectionObserver((entries) => {
-        const isVisible = entries.some((entry) => entry.isIntersecting);
+        const isVisible = entries.some((entry) => entry.intersectionRatio > 0);
 
         if (isVisible) {
           dispatchIsVisible();
@@ -131,38 +122,52 @@ export default class Input extends Disposable {
       observer.observe(this.el);
 
       this.onDispose(() => {
-        if (!onVisibleDispatched) observer.disconnect();
+        if (!isVisibleDispatched) observer.disconnect();
       });
     } else {
       // Fallback strategy is to periodically check element's offsetParent.
-      // It tracks only cases when the element is hidden, does not track scroll
-      const intervalId = setInterval(() => {
+      // This strategy tracks only cases when the element is hidden, does not track scroll
+      let intervalId: number | null = null;
+
+      const checkVisibility = () => {
         const isVisible = Boolean(this.el.offsetParent);
 
         if (isVisible) {
           dispatchIsVisible();
-          clearInterval(intervalId);
+          if (intervalId) clearInterval(intervalId);
         }
-      }, 500);
+      };
 
-      this.onDispose(() => {
-        if (!onVisibleDispatched) clearInterval(intervalId);
-      });
+      checkVisibility();
+
+      if (!isVisibleDispatched) {
+        intervalId = window.setInterval(checkVisibility, 500);
+
+        this.onDispose(() => {
+          if (!isVisibleDispatched && intervalId) clearInterval(intervalId);
+        });
+      }
+    }
+  }
+
+  private debouncedTriggerOnChange = debounce(
+    () => this.el.dispatchEvent(new Event(EVENT_INPUT_CHANGE)),
+    this.options.deferRequestBy
+  );
+
+  private checkIfValueChanged() {
+    const { value } = this.el;
+
+    if (isString(this.suggestedValue) && value === this.suggestedValue) return;
+
+    if (value !== this.lastValue) {
+      this.lastValue = value;
+      this.debouncedTriggerOnChange();
     }
   }
 
   private attachEventHandlers() {
-    const handleKeyup = debounce(() => {
-      const { value } = this.el;
-
-      if (isString(this.suggestedValue) && value === this.suggestedValue)
-        return;
-
-      if (value !== this.lastValue) {
-        this.lastValue = value;
-        this.el.dispatchEvent(new Event(EVENT_INPUT_CHANGE));
-      }
-    }, this.options.deferRequestBy);
+    const handleKeyup = debounce(() => this.checkIfValueChanged(), 0);
 
     // IE is buggy, it doesn't trigger `input` on text deletion, so use following events
     this.addDisposableEventListener(this.el, "keyup", handleKeyup);
@@ -171,8 +176,8 @@ export default class Input extends Disposable {
     this.addDisposableEventListener(this.el, "input", handleKeyup);
 
     this.addDisposableEventListener(this.el, "focus", () => {
-      // Update inner property if value was updated by external js
-      this.lastValue = this.el.value;
+      // Check if value was updated by external js
+      this.checkIfValueChanged();
     });
   }
 }

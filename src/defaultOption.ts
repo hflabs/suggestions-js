@@ -1,4 +1,4 @@
-import { InitOptions } from "./types";
+import { InitOptions, InnerInitFunctionalOptionNames } from "./types";
 
 export const defaultOptions: Omit<InitOptions<unknown>, "type"> = {
   autoHighlightFirst: false,
@@ -19,4 +19,22 @@ export const defaultOptions: Omit<InitOptions<unknown>, "type"> = {
   triggerSelectOnBlur: true,
   triggerSelectOnEnter: true,
   triggerSelectOnSpace: false,
+};
+
+// Non-functional values will be replaced by these values
+// This fixes cases like { formatSelected: false, }
+export const defaultCallbackOptions: Record<
+  InnerInitFunctionalOptionNames,
+  unknown
+> = {
+  formatSelected: null,
+  isQueryRequestable: null,
+  isSuggestionDataComplete: null,
+  onInvalidateSelection: null,
+  onSearchComplete: null,
+  onSearchError: null,
+  onSearchStart: null,
+  onSelect: null,
+  onSelectNothing: null,
+  renderSuggestion: null,
 };

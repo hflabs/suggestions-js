@@ -1,32 +1,22 @@
-export const isCursorAtEnd = (el: HTMLInputElement): boolean => {
-  const length = el.value.length;
+export const isCursorAtEnd = (
+  el: HTMLInputElement,
+  fallback: boolean
+): boolean => {
+  if (el !== document.activeElement) return false;
 
   // `selectionStart` and `selectionEnd` are not supported by some input types
   try {
     const selectionStart = el.selectionStart;
 
     if (typeof selectionStart === "number") {
+      const length = el.value.length;
       return selectionStart === length;
     }
-  } catch (ex) {}
-
-  // Fallback for IE
-  const { selection } = document as {
-    selection?: {
-      createRange: () => {
-        moveStart: (unit: string, count: number) => void;
-        text: string;
-      };
-    };
-  };
-
-  if (selection) {
-    const range = selection.createRange();
-    range.moveStart("character", -length);
-    return length === range.text.length;
+  } catch (ex) {
+    // Continue with fallback
   }
 
-  return true;
+  return fallback;
 };
 
 export const setCursorAtEnd = (el: HTMLInputElement): void => {

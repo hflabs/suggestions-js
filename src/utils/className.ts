@@ -9,7 +9,9 @@ import { escapeHtml } from "./escape";
  * Keep only strings
  */
 const filterClasses = (classes: unknown[]): string[] =>
-  classes.filter(isString);
+  classes
+    .filter(isString)
+    .reduce((memo, cls) => [...memo, ...cls.split(/\s+/g)], [] as string[]);
 
 export const addClass = (el: Element, ...classes: unknown[]): void =>
   // iterate, because classList.add does not support multiple arguments in IE

@@ -40,4 +40,15 @@ describe("debounce", () => {
 
     expect(fn).toHaveBeenCalledTimes(0);
   });
+
+  it("should do nothing on cancel before any calls", () => {
+    const fn = jest.fn((a: unknown) => a);
+    const debounced = debounce(fn, 10);
+
+    debounced.cancel();
+
+    jest.runAllTimers();
+
+    expect(fn).toHaveBeenCalledTimes(0);
+  });
 });

@@ -8,16 +8,40 @@ import Suggestions from "./classes/Suggestions";
 import ImplementationBase, {
   ImplementationBaseConstructor,
 } from "./classes/Implementations/ImplementationBase";
-import { InitOptions, PickMethods } from "./types";
-import { defaultOptions } from "./defaultOption";
+import {
+  FunctionPropertyNames,
+  InitOptions,
+  InnerInitFunctionalOptionNames,
+} from "./types";
+import { defaultCallbackOptions, defaultOptions } from "./defaultOption";
+import { ERROR_NOT_INITIALIZED, ERROR_OPTION_TYPE_IS_REQUIRED } from "./errors";
+
+export const createInstancesStore = <K extends Element, V>():
+  | WeakMap<K, V>
+  | Map<K, V> => new (WeakMap || Map)<K, V>();
 
 /**
  * Global store for created Suggestions instances
  */
-export const instances = new (WeakMap || Map)<
+export const instances = createInstancesStore<
   HTMLInputElement,
   Suggestions<unknown, ImplementationBase<unknown>>
 >();
+
+// Type-guarding to forbid non-functional values to functional props
+export const clearFunctionOptions = <D>(
+  options: Partial<InitOptions<D>>
+): Partial<InitOptions<D>> =>
+  Object.keys(defaultCallbackOptions).reduce((memo, name) => {
+    const value = memo[name as InnerInitFunctionalOptionNames];
+    return typeof value === "function"
+      ? memo
+      : {
+          ...memo,
+          [name]:
+            defaultCallbackOptions[name as InnerInitFunctionalOptionNames],
+        };
+  }, options);
 
 /**
  * Factory to produce Suggestions instances
@@ -33,7 +57,7 @@ export const initInstance = <D = unknown>(
   ImplementationClass: ImplementationBaseConstructor<D>
 ): (() => void) => {
   if (!options?.type) {
-    throw new Error('Option "type" is required.');
+    throw new Error(ERROR_OPTION_TYPE_IS_REQUIRED);
   }
 
   instances.get(el)?.dispose();
@@ -43,7 +67,7 @@ export const initInstance = <D = unknown>(
     ImplementationClass,
     {
       ...defaultOptions,
-      ...options,
+      ...clearFunctionOptions<D>(options),
     } as InitOptions<D>
   );
 
@@ -52,7 +76,10 @@ export const initInstance = <D = unknown>(
     instance as Suggestions<unknown, ImplementationBase<unknown>>
   );
 
-  return () => instances.delete(el);
+  return () => {
+    instances.get(el)?.dispose();
+    instances.delete(el);
+  };
 };
 
 /**
@@ -65,7 +92,7 @@ export const initInstance = <D = unknown>(
 export const execInstanceMethod = <
   D,
   I extends ImplementationBase<D>,
-  M extends keyof PickMethods<I> = keyof PickMethods<I>
+  M extends FunctionPropertyNames<I> = FunctionPropertyNames<I>
 >(
   el: HTMLInputElement,
   method: M,
@@ -77,7 +104,5 @@ export const execInstanceMethod = <
     ? ((instance as unknown) as Suggestions<D, I>).invokeImplementationMethod<
         M
       >(method, ...args)
-    : Promise.reject(
-        new Error("Suggestions are not instantiated on this element.")
-      );
+    : Promise.reject(new Error(ERROR_NOT_INITIALIZED));
 };

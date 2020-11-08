@@ -4,19 +4,18 @@ import promoSvg from "../svg/promo.svg";
 import { createElement } from "../utils/createElement";
 import { InnerInitOptions } from "../types";
 import Disposable from "./Disposable";
-import Floater from "./Floater";
+import { isPositiveNumber } from "../utils/isNumber";
+import { throttle } from "../utils/throttle";
+import { isMobileViewport } from "../utils/isMobileViewport";
+import PositionObserver from "./PositionObserver";
 
 const PROMO_HREF =
   "https://dadata.ru/suggestions/?utm_source=dadata&utm_medium=module&utm_campaign=suggestions-jquery";
 
-export interface PopoverOptions
+export interface PopoverInitOptions
   extends Pick<
     InnerInitOptions<unknown>,
-    | "classNames"
-    | "mobileMaxWidth"
-    | "hint"
-    | "noSuggestionsHint"
-    | "triggerSelectOnEnter"
+    "classNames" | "mobileMaxWidth" | "hint" | "noSuggestionsHint"
   > {
   showPromo: boolean;
   items: string[];
@@ -29,16 +28,24 @@ export interface PopoverOptions
  * Render suggestions, highlight them.
  */
 export default class Popover extends Disposable {
-  private el: HTMLDivElement = this.initFloatingContainer();
-  private items: HTMLDivElement[] = this.createItems(this.options.items);
+  private container: Element = document.body;
+  private el: HTMLDivElement = createElement("div", {
+    className: toClassName(classes.popover, this.options.classNames?.popover),
+  });
+  private items: HTMLLIElement[] = this.createItems(this.options.items);
+  private alignThrottleTimeout = 50;
 
   constructor(
     private target: HTMLInputElement,
-    private options: PopoverOptions
+    private options: PopoverInitOptions
   ) {
     super();
+    this.mount();
+    this.align();
+    this.initPositionObserver();
     this.render();
     this.listenToMousedown();
+    this.observeViewportSize();
   }
 
   public setItems(items: string[]): void {
@@ -49,20 +56,34 @@ export default class Popover extends Disposable {
   public highlightItem(index: number): void {
     this.items.forEach((el, i) => {
       if (i === index) {
-        addClass(el, classes.isSelected);
+        addClass(el, classes.isHighlighted);
       } else {
-        removeClass(el, classes.isSelected);
+        removeClass(el, classes.isHighlighted);
       }
     });
   }
 
-  private initFloatingContainer() {
-    const { classNames, mobileMaxWidth } = this.options;
-    const floater = new Floater(this.target, { classNames, mobileMaxWidth });
+  private mount() {
+    this.container.appendChild(this.el);
+    this.onDispose(() => this.container.removeChild(this.el));
+  }
 
-    this.onDispose(() => floater.dispose());
+  private align() {
+    const elRect = this.target.getBoundingClientRect();
+    const { style } = this.el;
 
-    return floater.getElement();
+    style.top = `${elRect.bottom + this.container.scrollTop}px`;
+    style.left = `${elRect.left + this.container.scrollLeft}px`;
+    style.width = `${elRect.width}px`;
+  }
+
+  private initPositionObserver() {
+    const observer = new PositionObserver(
+      this.target,
+      throttle(() => this.align(), this.alignThrottleTimeout)
+    );
+
+    this.onDispose(() => observer.dispose());
   }
 
   private render() {
@@ -71,34 +92,32 @@ export default class Popover extends Disposable {
     const fragment = document.createDocumentFragment();
 
     const hintText = items.length ? hint : noSuggestionsHint;
-    if (hintText || showPromo) {
-      const el = createElement("div", {
+    if (hintText) {
+      const hintElement = createElement("div", {
         className: toClassName(classes.hint, classNames?.hint),
+        textContent: hintText,
       });
 
-      el.appendChild(
-        createElement("span", {
-          className: classes.hintText,
-          innerText: hintText,
-        })
-      );
-
-      if (showPromo) {
-        el.appendChild(
-          createElement("a", {
-            className: classes.promo,
-            target: "_blank",
-            tabIndex: -1,
-            href: PROMO_HREF,
-            innerHTML: promoSvg,
-          })
-        );
-      }
-
-      fragment.appendChild(el);
+      fragment.appendChild(hintElement);
     }
 
-    items.forEach((el) => fragment.appendChild(el));
+    const list = createElement("ul", {
+      className: toClassName(classes.list, classNames?.list),
+    });
+    list.append(...items);
+    fragment.appendChild(list);
+
+    if (showPromo) {
+      fragment.appendChild(
+        createElement("a", {
+          className: classes.promo,
+          target: "_blank",
+          tabIndex: -1,
+          href: PROMO_HREF,
+          innerHTML: promoSvg,
+        })
+      );
+    }
 
     this.el.innerHTML = "";
     this.el.appendChild(fragment);
@@ -107,7 +126,7 @@ export default class Popover extends Disposable {
   private createItems(itemsHtml: string[]) {
     const { classNames, onItemClick } = this.options;
     const items = itemsHtml.map((innerHTML) =>
-      createElement("div", {
+      createElement("li", {
         className: toClassName(classes.item, classNames?.item),
         innerHTML,
       })
@@ -122,18 +141,38 @@ export default class Popover extends Disposable {
   }
 
   private listenToMousedown() {
-    const { onMousedown } = this.options;
+    this.addDisposableEventListener(
+      this.el,
+      "mousedown",
+      this.options.onMousedown
+    );
+  }
 
-    const handleMousedown = (e: MouseEvent) => {
-      const { target } = e;
+  private observeViewportSize() {
+    // Apply mobile styles on window resize
+    const { mobileMaxWidth } = this.options;
 
-      if (!(target instanceof Element)) return;
+    if (isPositiveNumber(mobileMaxWidth)) {
+      let wasMobile = false;
+      const updateIsMobile = throttle(() => {
+        const isMobile = isMobileViewport(window, mobileMaxWidth);
 
-      if (target === this.el || this.el.contains(target)) {
-        onMousedown();
-      }
-    };
+        if (isMobile !== wasMobile) {
+          if (isMobile) {
+            addClass(this.el, classes.isMobile);
+          } else {
+            removeClass(this.el, classes.isMobile);
+          }
+          wasMobile = isMobile;
+        }
+      }, this.alignThrottleTimeout);
 
-    this.addDisposableEventListener(document, "mousedown", handleMousedown);
+      updateIsMobile();
+
+      this.addDisposableEventListener(window, "resize", () => {
+        debugger;
+        updateIsMobile();
+      });
+    }
   }
 }
