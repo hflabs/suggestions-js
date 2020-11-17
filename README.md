@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/hflabs/suggestions-js.png?branch=main)](https://travis-ci.org/hflabs/suggestions-js)
+[![Build Status](https://travis-ci.org/hflabs/suggestions-js.svg?branch=main)](https://travis-ci.org/hflabs/suggestions-js)
 ![GitHub all releases](https://img.shields.io/github/downloads/hflabs/suggestions-js/total)
-![npm](https://img.shields.io/npm/dw/hflabs/suggestions)
+![npm](https://img.shields.io/npm/dw/@dadata/suggestions)
 
 # DaData.ru Suggestions plugin
 
@@ -15,7 +15,7 @@ JavaScript plugin for [DaData.ru Suggestions](https://dadata.ru/suggestions/) se
 ### Basic Usage
 
 ```typescript
-import { init, dispose } from '@dadata/suggestion';
+import { init, dispose } from '@dadata/suggestions';
 
 // ...
 // when you need to initialize Suggestions on some input

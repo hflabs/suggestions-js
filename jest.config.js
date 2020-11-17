@@ -4,10 +4,11 @@ module.exports = {
   preset: "ts-jest",
   collectCoverage: true,
   collectCoverageFrom: ["src/**/*.ts"],
+  coverageReporters: ["json-summary"],
   globals: {
     DEFINED_VERSION: packageInfo.version,
   },
-  moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "node", "d.ts"],
+  moduleFileExtensions: ["ts", "d.ts", "js", "json"],
   moduleNameMapper: {
     "\\.(css|sass)$": "identity-obj-proxy",
   },
