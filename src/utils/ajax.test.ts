@@ -164,11 +164,11 @@ describe("ajax()", () => {
     await ajax("", { headers: { "X-Version": "1.2.3" } });
 
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(fn).toHaveBeenLastCalledWith(
+    expect(fn).toHaveBeenCalledWith(
       expect.objectContaining({
-        requestHeaders: {
+        requestHeaders: expect.objectContaining({
           "X-Version": "1.2.3",
-        },
+        }),
       })
     );
   });

@@ -5,7 +5,11 @@
  */
 
 import { FunctionPropertyNames, InitOptions } from "../types";
-import { execInstanceMethod, initInstance } from "../instances";
+import {
+  disposeInstance,
+  execInstanceMethod,
+  initInstance,
+} from "../instances";
 import ImplementationSuggest from "../classes/Implementations/ImplementationSuggest";
 
 /**
@@ -42,3 +46,9 @@ export const execMethod = <
     ImplementationSuggest<SuggestionDataType>,
     Methods
   >(el, method, ...args);
+
+/**
+ * Removes Suggestions functionality from the input element
+ * @param {HTMLInputElement} el
+ */
+export const dispose = disposeInstance;

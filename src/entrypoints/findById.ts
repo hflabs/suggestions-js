@@ -6,7 +6,11 @@
 
 import { FunctionPropertyNames, InitOptions } from "../types";
 import ImplementationFindById from "../classes/Implementations/ImplementationFindById";
-import { execInstanceMethod, initInstance } from "../instances";
+import {
+  disposeInstance,
+  execInstanceMethod,
+  initInstance,
+} from "../instances";
 
 /**
  * Initialize "findById" Suggestions functionality on <input> element
@@ -41,3 +45,9 @@ export const execMethod = <
     ImplementationFindById<SuggestionDataType>,
     Methods
   >(el, method, ...args);
+
+/**
+ * Removes Suggestions functionality from the input element
+ * @param {HTMLInputElement} el
+ */
+export const dispose = disposeInstance;

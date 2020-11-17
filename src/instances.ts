@@ -44,6 +44,15 @@ export const clearFunctionOptions = <D>(
   }, options);
 
 /**
+ * Removes Suggestions functionality from the input element
+ * @param el
+ */
+export const disposeInstance = (el: HTMLInputElement): void => {
+  instances.get(el)?.dispose();
+  instances.delete(el);
+};
+
+/**
  * Factory to produce Suggestions instances
  *
  * @param el
@@ -76,10 +85,7 @@ export const initInstance = <D = unknown>(
     instance as Suggestions<unknown, ImplementationBase<unknown>>
   );
 
-  return () => {
-    instances.get(el)?.dispose();
-    instances.delete(el);
-  };
+  return () => disposeInstance(el);
 };
 
 /**

@@ -1,6 +1,7 @@
 import {
   clearFunctionOptions,
   createInstancesStore,
+  disposeInstance,
   execInstanceMethod,
   initInstance,
   instances,
@@ -166,6 +167,18 @@ describe("instances", () => {
           1,
         ]);
       }
+    });
+  });
+
+  describe("disposeInstance", () => {
+    it("should not fail if no instance exist", () => {
+      expect(() => disposeInstance(el)).not.toThrow();
+    });
+
+    it("should dispose instance", () => {
+      initInstance(el, { type: "some-type" }, ImplementationMock);
+      disposeInstance(el);
+      expect(instances.has(el)).toBe(false);
     });
   });
 });

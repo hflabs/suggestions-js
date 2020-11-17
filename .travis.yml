@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - node
+deploy:
+  provider: npm
+  email: dp.job@mail.ru
+  api_key:
+    secure: O+qIiLqSfv0lfm/uaw56Z93n9ZemxKvT/0MGFt5cLwjhVvhXc0hLLuJuMtZ3pTheIUwPK/6diV+cE0/vqLXUxjsDKAoTRbSc2dvECDpGxMZOsFUVqPgJQD9E1jSfADRfh+TxyvIfIeGpCSejD4nVLoJMmo5KuIWkgw0ICHBeQI1sxOuzNR3YC9DuIftRX9KQ0X7wyH1HDF9TUv46GBXcBw7STxUiUd2SIOi43srENjywOHVqMwZ2xGZhj5vITl+VtU+H/9XW5GqzYJ1r8f5zypx8hlcFydCRXQ2oVNa+TLBL8OXK9fGOi6H25UWvcWvFivM5OuIGN3GIkfkHGgUyBdAVQFh6BUzyuaOljTf+Cq0RTxkYJITzn1M0XrCxBTiJd2juVeLJJswejgM+5n9267IIqd9zCFQvXXmZsdeNrqkUu/UizUsSzXhgiOnR3RmAqba6LD/JoBybtRK6+qWM3IVw59byt3CBc74KHT6b28hh3V+p6ftY7PhRZWJs9CxIkKAux+He/y6f4QK/z8GI76dZoImbxWfi5PXg0BCegUbtfqHDtFdkyfGHJiITj+Qr1Xtgqebla3ibz983clCqT9q7vztjsVCgFB9G9nz7GoJyiAZJBLN+80cdtvGddFFIYh/gw48O7qua1tkHW79R80cvE4qU/DJQ8XZAc0G7PPU=
+  on:
+    tags: true
+    repo: hflabs/suggestions-js
+    branch: main
+  skip_cleanup: 'true'

@@ -1,6 +1,6 @@
 {
-  "name": "@hflabs/suggestions",
-  "version": "1.0.0",
+  "name": "@dadata/suggestions",
+  "version": "20.11.0",
   "description": "DaData.ru Suggestions plugin",
   "author": {
     "name": "HFLabs",
@@ -10,7 +10,7 @@
   "scripts": {
     "build": "node ./node_modules/.bin/webpack",
     "start": "node ./node_modules/.bin/webpack serve",
-    "test": "jest",
+    "test": "node ./node_modules/.bin/jest",
     "lint": "node ./node_modules/.bin/eslint src/*.ts src/**/*.ts",
     "prepublishOnly": "npm run-script test && npm run-script build"
   },
@@ -20,43 +20,43 @@
     "@babel/runtime-corejs3": "^7.12.5",
     "@testing-library/jest-dom": "^5.11.6",
     "@types/jest": "^26.0.15",
-    "@types/jsdom": "^16.2.4",
+    "@types/jsdom": "^16.2.5",
     "@types/sinon": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^4.6.1",
-    "@typescript-eslint/parser": "^4.6.1",
-    "babel-loader": "^8.1.0",
+    "@typescript-eslint/eslint-plugin": "^4.8.1",
+    "@typescript-eslint/parser": "^4.8.1",
+    "babel-loader": "^8.2.1",
     "clean-webpack-plugin": "^3.0.0",
-    "css-loader": "^5.0.0",
-    "eslint": "^7.12.1",
+    "css-loader": "^5.0.1",
+    "eslint": "^7.13.0",
     "html-webpack-plugin": "^4.5.0",
     "husky": "^4.3.0",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^26.6.1",
+    "jest": "^26.6.3",
     "jest-raw-loader": "^1.0.1",
     "jsdom": "^16.4.0",
     "portfinder-sync": "0.0.2",
     "prettier": "^2.1.2",
     "raw-loader": "^4.0.2",
-    "sass": "^1.27.1",
-    "sass-loader": "^10.0.4",
+    "sass": "^1.29.0",
+    "sass-loader": "^10.1.0",
     "sinon": "^9.2.1",
     "style-loader": "^2.0.0",
-    "ts-jest": "^26.4.2",
-    "ts-loader": "^8.0.7",
+    "ts-jest": "^26.4.4",
+    "ts-loader": "^8.0.11",
     "tsc": "^1.20150623.0",
-    "typescript": "^4.0.3",
-    "webpack": "^5.2.0",
-    "webpack-cli": "^4.1.0",
+    "typescript": "^4.0.5",
+    "webpack": "^5.5.0",
+    "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0",
-    "webpack-merge": "^5.3.0"
+    "webpack-merge": "^5.4.0"
   },
   "files": [
-    "lib"
+    "lib",
+    "README.md"
   ],
   "husky": {
     "hooks": {
       "pre-commit": "npm run-script prepublishOnly"
     }
-  },
-  "dependencies": {}
+  }
 }
