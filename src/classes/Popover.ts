@@ -169,10 +169,7 @@ export default class Popover extends Disposable {
 
       updateIsMobile();
 
-      this.addDisposableEventListener(window, "resize", () => {
-        debugger;
-        updateIsMobile();
-      });
+      this.addDisposableEventListener(window, "resize", updateIsMobile);
     }
   }
 }

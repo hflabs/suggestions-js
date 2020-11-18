@@ -8,7 +8,7 @@ module.exports = {
   globals: {
     DEFINED_VERSION: packageInfo.version,
   },
-  moduleFileExtensions: ["ts", "d.ts", "js", "json"],
+  moduleFileExtensions: ["js", "ts", "json"],
   moduleNameMapper: {
     "\\.(css|sass)$": "identity-obj-proxy",
   },
