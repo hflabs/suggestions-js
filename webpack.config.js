@@ -19,6 +19,7 @@ const config = {
     filename: "[name].js",
     path: path.resolve("./lib"),
     library,
+    libraryTarget: "umd"
   },
   mode: "production",
   module: {
