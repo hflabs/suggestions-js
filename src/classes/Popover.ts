@@ -80,7 +80,9 @@ export default class Popover extends Disposable {
   private initPositionObserver() {
     const observer = new PositionObserver(
       this.target,
-      throttle(() => this.align(), this.alignThrottleTimeout)
+      typeof window.requestAnimationFrame === "function"
+        ? () => window.requestAnimationFrame(() => this.align())
+        : throttle(() => this.align(), this.alignThrottleTimeout)
     );
 
     this.onDispose(() => observer.dispose());

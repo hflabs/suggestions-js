@@ -10,8 +10,6 @@ export type FunctionPropertyNames<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
 }[keyof T];
 
-export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
-
 export type InitType = "address" | "fio" | "party" | "email" | "bank" | string;
 
 export type RequestSuggestionsMethod = "suggest" | "findById";
@@ -91,10 +89,6 @@ export interface InnerInitOptions<D> {
   type: InitType;
   unformattableTokens?: string[];
 }
-
-export type InnerInitFunctionalOptionNames = FunctionPropertyNames<
-  Required<InnerInitOptions<unknown>>
->;
 
 /**
  * Options exposed for initializing

@@ -2,6 +2,8 @@ import { ajax, AjaxResponse } from "./ajax";
 import sinon, { SinonFakeServer } from "sinon";
 import { as } from "./as";
 import { ERROR_AJAX_TIMEOUT, ERROR_AJAX_UNAVAILABLE } from "../errors";
+import { withMockedProperty } from "../../testUtils/withMockedProperty";
+import { withFakeTimers } from "../../testUtils/withFakeTimers";
 
 describe("ajax()", () => {
   let server: SinonFakeServer;
@@ -86,13 +88,9 @@ describe("ajax()", () => {
   });
 
   it("should fail on unavailable XMLHttpRequest", async () => {
-    const { XMLHttpRequest } = window;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    window.XMLHttpRequest = null;
-    await expect(ajax("")).rejects.toThrow(ERROR_AJAX_UNAVAILABLE);
-    window.XMLHttpRequest = XMLHttpRequest;
+    await withMockedProperty(window, "XMLHttpRequest", null, async () => {
+      await expect(ajax("")).rejects.toThrow(ERROR_AJAX_UNAVAILABLE);
+    });
   });
 
   it("should fail on incorrect payload type", async () => {
@@ -108,36 +106,34 @@ describe("ajax()", () => {
   });
 
   it("should fail on timeout exceeded", async () => {
-    jest.useFakeTimers();
     server.autoRespond = false;
 
-    const request = ajax("", { timeout: 10 });
+    await withFakeTimers(async () => {
+      const request = ajax("", { timeout: 10 });
 
-    jest.runAllTimers();
+      jest.runAllTimers();
 
-    await expect(request).rejects.toThrow(ERROR_AJAX_TIMEOUT);
-    jest.useRealTimers();
+      await expect(request).rejects.toThrow(ERROR_AJAX_TIMEOUT);
+    });
   });
 
   it("should succeed on timeout not exceeded", async () => {
-    jest.useFakeTimers();
     server.autoRespond = false;
+    await withFakeTimers(async () => {
+      const request = ajax("", { timeout: 10 });
 
-    const request = ajax("", { timeout: 10 });
+      server.respondWith([200, {}, "Ok"]);
+      server.respond();
 
-    server.respondWith([200, {}, "Ok"]);
-    server.respond();
+      jest.runAllTimers();
 
-    jest.runAllTimers();
-
-    await expect(request).resolves.toMatchObject(
-      as<Partial<AjaxResponse<string>>>({
-        status: 200,
-        body: "Ok",
-      })
-    );
-
-    jest.useRealTimers();
+      await expect(request).resolves.toMatchObject(
+        as<Partial<AjaxResponse<string>>>({
+          status: 200,
+          body: "Ok",
+        })
+      );
+    });
   });
 
   it("should parse headers", async () => {

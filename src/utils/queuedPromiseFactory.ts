@@ -4,22 +4,22 @@
  */
 import { deepEqual } from "./deepEqual";
 
-interface PendingCall<A extends unknown[], R> {
-  args: A;
-  promise: Promise<R>;
+interface PendingCall<Args extends unknown[], Result> {
+  args: Args;
+  promise: Promise<Result>;
 }
 
 export const queuedPromiseFactory = <
-  A extends unknown[] = unknown[],
-  R = unknown
+  Args extends unknown[] = unknown[],
+  Result = unknown
 >(
-  factory: (...args: A) => Promise<R>,
-  createRejectionData: (...args: A) => unknown = () => new Error()
-): ((...args: A) => Promise<R>) => {
-  let pendingCall: PendingCall<A, R> | null = null;
+  factory: (...args: Args) => Promise<Result>,
+  createRejectionData: (...args: Args) => unknown = () => new Error()
+): ((...args: Args) => Promise<Result>) => {
+  let pendingCall: PendingCall<Args, Result> | null = null;
   let pendingReject: ((reason?: unknown) => void) | null = null;
 
-  return (...args: A): Promise<R> => {
+  return (...args: Args): Promise<Result> => {
     if (pendingCall) {
       if (deepEqual(pendingCall.args, args)) {
         return pendingCall.promise;
@@ -30,7 +30,7 @@ export const queuedPromiseFactory = <
 
     pendingCall = {
       args,
-      promise: new Promise<R>((resolve, reject) => {
+      promise: new Promise<Result>((resolve, reject) => {
         // Expose rejection callback
         pendingReject = () => reject(createRejectionData(...args));
 

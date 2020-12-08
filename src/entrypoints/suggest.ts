@@ -18,10 +18,10 @@ import ImplementationSuggest from "../classes/Implementations/ImplementationSugg
  * @param {HTMLInputElement} el
  * @param {Partial<InitOptions>} options
  */
-export const init = <SuggestionDataType = unknown>(
+export const init = <SuggestionData = unknown>(
   el: HTMLInputElement,
-  options: Partial<InitOptions<SuggestionDataType>> &
-    Pick<InitOptions<SuggestionDataType>, "type">
+  options: Partial<InitOptions<SuggestionData>> &
+    Pick<InitOptions<SuggestionData>, "type">
 ): (() => void) => initInstance(el, options, ImplementationSuggest);
 
 /**
@@ -32,18 +32,16 @@ export const init = <SuggestionDataType = unknown>(
  * @param {any[]} args
  */
 export const execMethod = <
-  SuggestionDataType,
-  Methods extends FunctionPropertyNames<
-    ImplementationSuggest<SuggestionDataType>
-  >
+  SuggestionData,
+  Methods extends FunctionPropertyNames<ImplementationSuggest<SuggestionData>>
 >(
   el: HTMLInputElement,
   method: Methods,
-  ...args: Parameters<ImplementationSuggest<SuggestionDataType>[Methods]>
-): Promise<ReturnType<ImplementationSuggest<SuggestionDataType>[Methods]>> =>
+  ...args: Parameters<ImplementationSuggest<SuggestionData>[Methods]>
+): Promise<ReturnType<ImplementationSuggest<SuggestionData>[Methods]>> =>
   execInstanceMethod<
-    SuggestionDataType,
-    ImplementationSuggest<SuggestionDataType>,
+    SuggestionData,
+    ImplementationSuggest<SuggestionData>,
     Methods
   >(el, method, ...args);
 

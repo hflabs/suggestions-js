@@ -10,6 +10,7 @@ import { hasQualityCode } from "../../utils/suggestion";
 import { ImplementationBaseOptions } from "./ImplementationBase";
 import { deepEqual } from "../../utils/deepEqual";
 import { noop } from "../../utils/noop";
+import { invoke } from "../../utils/invoke";
 
 enum PopoverState {
   CLOSED,
@@ -19,15 +20,18 @@ enum PopoverState {
 }
 
 export default class ImplementationSuggest<
-  D
-> extends ImplementationSuggestionsBase<D> {
+  SuggestionData
+> extends ImplementationSuggestionsBase<SuggestionData> {
   private popoverState: PopoverState = PopoverState.CLOSED;
   private popover: Popover | null = null;
-  private suggestions: Suggestions<D> = [];
+  private suggestions: Suggestions<SuggestionData> = [];
   private highlightIndex = -1;
   private shouldIgnoreBlur = false;
 
-  constructor(el: HTMLInputElement, options: ImplementationBaseOptions<D>) {
+  constructor(
+    el: HTMLInputElement,
+    options: ImplementationBaseOptions<SuggestionData>
+  ) {
     super(el, options);
     this.fetchSuggestionApiMethod = "suggest";
     this.listenToInput();
@@ -276,7 +280,6 @@ export default class ImplementationSuggest<
       this.popover.dispose();
       this.popover = null;
       this.setPopoverState(PopoverState.CLOSED);
-      // this.options.input.suggestValue(null)
       this.setHighlightIndex(-1);
     }
   }
@@ -313,7 +316,7 @@ export default class ImplementationSuggest<
           const { value } = suggestion;
 
           return (
-            renderSuggestion?.(suggestion, query, {
+            invoke(renderSuggestion, suggestion, query, {
               suggestions,
               unformattableTokens,
             }) || highlightMatches(value, query, { unformattableTokens })
@@ -344,7 +347,7 @@ export default class ImplementationSuggest<
       enrichmentEnabled,
     } = this.options;
 
-    const selectedSuggestion: Suggestion<D> | null =
+    const selectedSuggestion: Suggestion<SuggestionData> | null =
       this.suggestions[index] || null;
 
     // Do not let select current suggestion again.
@@ -370,14 +373,14 @@ export default class ImplementationSuggest<
 
     const selectedSuggestionValue: string | null =
       selectedSuggestion &&
-      (formatSelected?.(selectedSuggestion) || selectedSuggestion.value);
+      (invoke(formatSelected, selectedSuggestion) || selectedSuggestion.value);
 
     // Enrichment can take a long time, so update input's value before it.
     if (selectedSuggestion) {
       input.setValue(selectedSuggestionValue);
     }
 
-    new Promise<Suggestion<D> | null>((resolve, reject) => {
+    new Promise<Suggestion<SuggestionData> | null>((resolve, reject) => {
       if (
         selectedSuggestion &&
         !hasQualityCode(selectedSuggestion.data) &&
@@ -393,7 +396,7 @@ export default class ImplementationSuggest<
       .catch(() => selectedSuggestion)
       // If enrichment request returned empty list, continue with original suggestion
       .then((enrichedSuggestion) => enrichedSuggestion || selectedSuggestion)
-      .then((enrichedSuggestion: Suggestion<D> | null) => {
+      .then((enrichedSuggestion: Suggestion<SuggestionData> | null) => {
         this.setCurrentSuggestion(enrichedSuggestion);
 
         // Save enriched suggestion into the cache
@@ -405,7 +408,8 @@ export default class ImplementationSuggest<
           Boolean(options?.continueSelecting) &&
           // Suppose suggestion is complete enough and there is no need to continue selecting
           !(
-            enrichedSuggestion && isSuggestionDataComplete?.(enrichedSuggestion)
+            enrichedSuggestion &&
+            invoke(isSuggestionDataComplete, enrichedSuggestion)
           );
 
         // If value has not changed during enrichment, update input
@@ -417,7 +421,8 @@ export default class ImplementationSuggest<
           currentValue === selectedSuggestionValue
         ) {
           const nextValue = enrichedSuggestion
-            ? formatSelected?.(enrichedSuggestion) || enrichedSuggestion.value
+            ? invoke(formatSelected, enrichedSuggestion) ||
+              enrichedSuggestion.value
             : currentValue;
 
           input.setValue(`${nextValue}${shouldContinueSelecting ? " " : ""}`);

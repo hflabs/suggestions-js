@@ -3,12 +3,14 @@ import ImplementationBase from "./ImplementationBase";
 import { queuedPromiseFactory } from "../../utils/queuedPromiseFactory";
 import { ERROR_FETCH_ABORTED } from "../../errors";
 
-abstract class ImplementationSuggestionsBase<D> extends ImplementationBase<D> {
+abstract class ImplementationSuggestionsBase<
+  SuggestionData
+> extends ImplementationBase<SuggestionData> {
   protected fetchSuggestionsApiMethod: RequestSuggestionsMethod = "suggest";
 
   private fetchSuggestionsCaches: Record<
     string,
-    Record<string, Suggestions<D>>
+    Record<string, Suggestions<SuggestionData>>
   > = {};
 
   private fetchSuggestionsFromApi = this.triggeringSearchCallbacks(
@@ -29,7 +31,7 @@ abstract class ImplementationSuggestionsBase<D> extends ImplementationBase<D> {
   protected fetchSuggestions(
     query: string,
     params?: Record<string, unknown>
-  ): Promise<Suggestions<D>> {
+  ): Promise<Suggestions<SuggestionData>> {
     const { preventBadQueries, noCache } = this.options;
 
     if (noCache) {

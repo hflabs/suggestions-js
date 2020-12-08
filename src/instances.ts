@@ -8,12 +8,8 @@ import Suggestions from "./classes/Suggestions";
 import ImplementationBase, {
   ImplementationBaseConstructor,
 } from "./classes/Implementations/ImplementationBase";
-import {
-  FunctionPropertyNames,
-  InitOptions,
-  InnerInitFunctionalOptionNames,
-} from "./types";
-import { defaultCallbackOptions, defaultOptions } from "./defaultOption";
+import { FunctionPropertyNames, InitOptions } from "./types";
+import { defaultOptions } from "./defaultOption";
 import { ERROR_NOT_INITIALIZED, ERROR_OPTION_TYPE_IS_REQUIRED } from "./errors";
 
 export const createInstancesStore = <K extends Element, V>():
@@ -27,21 +23,6 @@ export const instances = createInstancesStore<
   HTMLInputElement,
   Suggestions<unknown, ImplementationBase<unknown>>
 >();
-
-// Type-guarding to forbid non-functional values to functional props
-export const clearFunctionOptions = <D>(
-  options: Partial<InitOptions<D>>
-): Partial<InitOptions<D>> =>
-  Object.keys(defaultCallbackOptions).reduce((memo, name) => {
-    const value = memo[name as InnerInitFunctionalOptionNames];
-    return typeof value === "function"
-      ? memo
-      : {
-          ...memo,
-          [name]:
-            defaultCallbackOptions[name as InnerInitFunctionalOptionNames],
-        };
-  }, options);
 
 /**
  * Removes Suggestions functionality from the input element
@@ -76,7 +57,7 @@ export const initInstance = <D = unknown>(
     ImplementationClass,
     {
       ...defaultOptions,
-      ...clearFunctionOptions<D>(options),
+      ...options,
     } as InitOptions<D>
   );
 

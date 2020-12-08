@@ -1,11 +1,12 @@
 import { ImplementationBaseOptions } from "./ImplementationBase";
 import { defaultOptions } from "../../defaultOption";
-import Api, { ApiResponseSuggestions } from "../Api";
-import Input, { EVENT_INPUT_CHANGE } from "../Input";
+import Api from "../Api";
+import Input from "../Input";
 import ImplementationFindById from "./ImplementationFindById";
 import sinon, { SinonFakeServer } from "sinon";
-import { as } from "../../utils/as";
-import { Suggestion } from "../../types";
+import { withFakeTimers } from "../../../testUtils/withFakeTimers";
+import { respondWithSuggestions } from "../../../testUtils/withFakeServer";
+import { createSuggestions } from "../../../testUtils/createSuggestions";
 
 describe("class ImplementationFindById", () => {
   let el: HTMLInputElement;
@@ -21,10 +22,13 @@ describe("class ImplementationFindById", () => {
     server.restore();
   });
 
-  const withInstance = async (
+  const withInstance = (
     customOptions: Partial<ImplementationBaseOptions<unknown>> | null,
-    fn: (instance: ImplementationFindById<unknown>, input: Input) => void
-  ): Promise<void> => {
+    fn: (
+      instance: ImplementationFindById<unknown>,
+      input: Input
+    ) => Promise<void> | void
+  ): Promise<void> | void => {
     const options = {
       ...defaultOptions,
       type: "some-type",
@@ -40,49 +44,34 @@ describe("class ImplementationFindById", () => {
       input,
     });
 
-    await fn(instance, input);
+    const cleanup = () => instance.dispose();
+    const result = fn(instance, input);
 
-    instance.dispose();
+    if (result instanceof Promise) return result.finally(cleanup);
+
+    cleanup();
+    return result;
   };
 
   const simulateInputChange = (value: string) => {
-    el.value = value;
-    el.focus();
-    el.dispatchEvent(new Event(EVENT_INPUT_CHANGE));
+    // Change a value, focus the input to read new value, wait for debouncing to complete
+    withFakeTimers(() => {
+      el.value = value;
+      el.focus();
+      jest.runOnlyPendingTimers();
+    });
   };
 
-  const respondWithSuggestion = async <D = unknown>(
-    suggestion: Suggestion<D> | null
-  ) => {
-    server.respondWith([
-      200,
-      { "Content-type": "application/json" },
-      JSON.stringify(
-        as<ApiResponseSuggestions<D>>({
-          suggestions: suggestion ? [suggestion] : [],
-        })
-      ),
-    ]);
-    server.respond();
-
-    // Wait for promises proceeded
-    await new Promise((resolve) => setTimeout(resolve));
-  };
-
-  it("should send a request for suggestion if input value change", async () => {
-    await withInstance({ minLength: 1 }, () => {
-      jest.useFakeTimers();
+  it("should send a request for suggestion if input value change", () => {
+    withInstance({ minLength: 1 }, () => {
       simulateInputChange("some text");
 
-      jest.runAllTimers();
-
       expect(server.requests).toHaveLength(1);
-      jest.useRealTimers();
     });
   });
 
-  it("should not send a request if input value changed but not requestable", async () => {
-    await withInstance({ minLength: 100 }, () => {
+  it("should not send a request if input value changed but not requestable", () => {
+    withInstance({ minLength: 100 }, () => {
       simulateInputChange("some text");
 
       expect(server.requests).toHaveLength(0);
@@ -91,11 +80,6 @@ describe("class ImplementationFindById", () => {
 
   it("should trigger onSelect if request succeeded", async () => {
     const onSelect = jest.fn();
-    const suggestion: Suggestion<null> = {
-      value: "value",
-      unrestricted_value: "unrestricted_value",
-      data: null,
-    };
 
     await withInstance(
       {
@@ -103,39 +87,35 @@ describe("class ImplementationFindById", () => {
         onSelect,
       },
       async () => {
-        simulateInputChange("some text");
+        const suggestions = createSuggestions(1);
 
-        await respondWithSuggestion<null>(suggestion);
+        simulateInputChange("some text");
+        await respondWithSuggestions(server, suggestions);
+
+        expect(onSelect).toHaveBeenCalledWith(suggestions[0], true, el);
       }
     );
-
-    expect(onSelect).toHaveBeenCalledWith(suggestion, true, el);
   });
 
   it("should not call setCurrentSuggestion if input value changed during request", async () => {
-    await withInstance(
-      {
-        minLength: 1,
-      },
-      async (instance, input) => {
-        const setCurrentSuggestion = jest.spyOn(
-          instance,
-          // Spy on private method
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          "setCurrentSuggestion"
-        );
+    await withInstance({ minLength: 1 }, async (instance, input) => {
+      const setCurrentSuggestion = jest.spyOn(
+        instance,
+        // Spy on private method
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        "setCurrentSuggestion"
+      );
 
-        simulateInputChange("some text");
+      simulateInputChange("some text");
 
-        expect(server.requests).toHaveLength(1);
+      expect(server.requests).toHaveLength(1);
 
-        input.setValue("some text changed");
+      input.setValue("some text changed");
 
-        await respondWithSuggestion(null);
+      await respondWithSuggestions(server, []);
 
-        expect(setCurrentSuggestion).not.toHaveBeenCalled();
-      }
-    );
+      expect(setCurrentSuggestion).not.toHaveBeenCalled();
+    });
   });
 });

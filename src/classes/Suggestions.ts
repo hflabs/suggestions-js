@@ -7,6 +7,7 @@ import ImplementationBase, {
   ImplementationBaseConstructor,
 } from "./Implementations/ImplementationBase";
 import { ERROR_DISPOSED } from "../errors";
+import { invoke } from "../utils/invoke";
 
 type PublicMethodCall<
   SuggestionData,
@@ -95,7 +96,7 @@ export default class Suggestions<
       (status) => {
         Suggestions.statusByType[type] = status;
       },
-      (error) => onSearchError?.(error, null, this.el)
+      (error) => invoke(onSearchError, error, null, this.el)
     );
 
     return request;

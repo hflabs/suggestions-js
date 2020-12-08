@@ -3,7 +3,7 @@ import Disposable from "./Disposable";
 import { addClass, removeClass } from "../utils/className";
 import classes from "./Input.sass";
 import { debounce } from "../utils/debounce";
-import { isString } from "../utils/isString";
+import { isPositiveNumber } from "../utils/isNumber";
 
 export const EVENT_INPUT_VISIBLE = "suggestions-input-visible";
 export const EVENT_INPUT_CHANGE = "suggestions-value-change";
@@ -29,7 +29,7 @@ export type InputInitOptions = Pick<
  * Observe text-field visibility. Provide cross-browser onChange event.
  */
 export default class Input extends Disposable {
-  private lastValue: string = this.el.value;
+  private currentValue: string = this.el.value;
   private suggestedValue: string | null = null;
 
   constructor(private el: HTMLInputElement, private options: InputInitOptions) {
@@ -41,11 +41,12 @@ export default class Input extends Disposable {
   }
 
   public getValue(): string {
-    return this.lastValue;
+    this.checkIfValueChanged();
+    return this.currentValue;
   }
 
   public setValue(value: string): void {
-    this.lastValue = value;
+    this.currentValue = value;
     this.el.value = value;
   }
 
@@ -56,9 +57,9 @@ export default class Input extends Disposable {
     this.suggestedValue = value;
 
     if (value === null) {
-      this.el.value = this.lastValue;
+      this.el.value = this.currentValue;
     } else {
-      this.lastValue = this.el.value;
+      this.currentValue = this.el.value;
       this.el.value = value;
     }
   }
@@ -152,16 +153,16 @@ export default class Input extends Disposable {
 
   private debouncedTriggerOnChange = debounce(
     () => this.el.dispatchEvent(new Event(EVENT_INPUT_CHANGE)),
-    this.options.deferRequestBy
+    isPositiveNumber(this.options.deferRequestBy)
+      ? this.options.deferRequestBy
+      : 0
   );
 
   private checkIfValueChanged() {
     const { value } = this.el;
 
-    if (isString(this.suggestedValue) && value === this.suggestedValue) return;
-
-    if (value !== this.lastValue) {
-      this.lastValue = value;
+    if (value !== this.suggestedValue && value !== this.currentValue) {
+      this.currentValue = value;
       this.debouncedTriggerOnChange();
     }
   }

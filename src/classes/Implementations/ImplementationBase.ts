@@ -12,27 +12,29 @@ import { deepEqual } from "../../utils/deepEqual";
 import { isPositiveNumber } from "../../utils/isNumber";
 import { isString } from "../../utils/isString";
 import { ERROR_DISPOSED, ERROR_FETCH_ABORTED } from "../../errors";
+import { invoke } from "../../utils/invoke";
 
-export interface ImplementationBaseOptions<D> extends InnerInitOptions<D> {
-  api: Api<D>;
+export interface ImplementationBaseOptions<SuggestionData>
+  extends InnerInitOptions<SuggestionData> {
+  api: Api<SuggestionData>;
   input: Input;
   plan?: StatusPlan;
 }
 
-export interface ImplementationBaseConstructor<D> {
+export interface ImplementationBaseConstructor<SuggestionData> {
   new (
     el: HTMLInputElement,
-    options: ImplementationBaseOptions<D>
-  ): ImplementationBase<D>;
+    options: ImplementationBaseOptions<SuggestionData>
+  ): ImplementationBase<SuggestionData>;
 }
 
-abstract class ImplementationBase<D> extends Disposable {
+abstract class ImplementationBase<SuggestionData> extends Disposable {
   protected fetchSuggestionApiMethod: RequestSuggestionsMethod = "findById";
-  private currentSuggestion: Suggestion<D> | null = null;
+  private currentSuggestion: Suggestion<SuggestionData> | null = null;
 
   constructor(
     protected el: HTMLInputElement,
-    protected options: ImplementationBaseOptions<D>
+    protected options: ImplementationBaseOptions<SuggestionData>
   ) {
     super();
   }
@@ -40,11 +42,11 @@ abstract class ImplementationBase<D> extends Disposable {
   /**
    * Restores suggestion object for current input's value.
    */
-  public fixData(): Promise<Suggestion<D> | null> {
+  public fixData(): Promise<Suggestion<SuggestionData> | null> {
     const { input } = this.options;
     const query = input.getValue().trim();
 
-    return new Promise<Suggestion<D> | null>((resolve, reject) => {
+    return new Promise<Suggestion<SuggestionData> | null>((resolve, reject) => {
       this.onDispose(() => reject(new Error(ERROR_DISPOSED)));
 
       Promise.resolve(
@@ -78,7 +80,9 @@ abstract class ImplementationBase<D> extends Disposable {
    * @param suggestion
    * @protected
    */
-  protected setCurrentSuggestion(suggestion: Suggestion<D> | null): void {
+  protected setCurrentSuggestion(
+    suggestion: Suggestion<SuggestionData> | null
+  ): void {
     const {
       input,
       onInvalidateSelection,
@@ -88,20 +92,20 @@ abstract class ImplementationBase<D> extends Disposable {
 
     if (suggestion) {
       if (!deepEqual(suggestion, this.currentSuggestion)) {
-        onSelect?.(suggestion, true, this.el);
+        invoke(onSelect, suggestion, true, this.el);
       }
     } else {
       if (this.currentSuggestion) {
-        onInvalidateSelection?.(this.currentSuggestion, this.el);
+        invoke(onInvalidateSelection, this.currentSuggestion, this.el);
       } else {
-        onSelectNothing?.(input.getValue(), this.el);
+        invoke(onSelectNothing, input.getValue(), this.el);
       }
     }
 
     this.currentSuggestion = suggestion;
   }
 
-  protected getCurrentSuggestion(): Suggestion<D> | null {
+  protected getCurrentSuggestion(): Suggestion<SuggestionData> | null {
     return this.currentSuggestion;
   }
 
@@ -112,7 +116,7 @@ abstract class ImplementationBase<D> extends Disposable {
   protected fetchSuggestion(
     query: string,
     params?: Record<string, unknown>
-  ): Promise<Suggestion<D> | null> {
+  ): Promise<Suggestion<SuggestionData> | null> {
     const { api } = this.options;
 
     return api
@@ -124,18 +128,21 @@ abstract class ImplementationBase<D> extends Disposable {
   }
 
   protected triggeringSearchCallbacks<
-    R extends Suggestions<D> | Suggestion<D> | null
+    Result extends
+      | Suggestions<SuggestionData>
+      | Suggestion<SuggestionData>
+      | null
   >(
     fn: (
-      this: ImplementationBase<D>,
+      this: ImplementationBase<SuggestionData>,
       query: string,
       params?: Record<string, unknown>
-    ) => Promise<R>
-  ): (query: string, params?: Record<string, unknown>) => Promise<R> {
+    ) => Promise<Result>
+  ): (query: string, params?: Record<string, unknown>) => Promise<Result> {
     const { onSearchError, onSearchStart, onSearchComplete } = this.options;
 
     return (query: string, params?: Record<string, unknown>) => {
-      const searchStartResult = onSearchStart?.(query, this.el);
+      const searchStartResult = invoke(onSearchStart, query, this.el);
       const adjustedQuery = isString(searchStartResult)
         ? searchStartResult
         : query;
@@ -144,11 +151,12 @@ abstract class ImplementationBase<D> extends Disposable {
 
       request.then(
         (result) => {
-          onSearchComplete?.(
+          invoke(
+            onSearchComplete,
             result instanceof Array
               ? result
               : result
-              ? [result as Suggestion<D>]
+              ? [result as Suggestion<SuggestionData>]
               : [],
             adjustedQuery,
             this.el
@@ -156,7 +164,7 @@ abstract class ImplementationBase<D> extends Disposable {
         },
         (error) => {
           if (error.message !== ERROR_FETCH_ABORTED) {
-            onSearchError?.(error, adjustedQuery, this.el);
+            invoke(onSearchError, error, adjustedQuery, this.el);
           }
         }
       );

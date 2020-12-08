@@ -3,10 +3,10 @@
  * @param {string} tagName
  * @param {object} props
  */
-export const createElement = <T extends keyof HTMLElementTagNameMap>(
-  tagName: T,
-  props?: Partial<HTMLElementTagNameMap[T]>
-): HTMLElementTagNameMap[T] => {
+export const createElement = <Tag extends keyof HTMLElementTagNameMap>(
+  tagName: Tag,
+  props?: Partial<HTMLElementTagNameMap[Tag]>
+): HTMLElementTagNameMap[Tag] => {
   const el = document.createElement(tagName);
 
   if (props) {

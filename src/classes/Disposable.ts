@@ -58,19 +58,18 @@ abstract class Disposable {
   /**
    * Add event listener on some element. Listener will be removed when the instance is disposed.
    *
-   * @param el
+   * @param target
    * @param type
    * @param handler
    * @protected
    */
-  protected addDisposableEventListener<T extends EventTarget, E extends Event>(
-    el: T,
-    type: string,
-    handler: (this: T, e: E) => void
-  ): void {
-    el.addEventListener(type, handler as EventListener);
+  protected addDisposableEventListener<
+    Target extends EventTarget,
+    E extends Event
+  >(target: Target, type: string, handler: (this: Target, e: E) => void): void {
+    target.addEventListener(type, handler as EventListener);
     this.onDispose(() =>
-      el.removeEventListener(type, handler as EventListener)
+      target.removeEventListener(type, handler as EventListener)
     );
   }
 }

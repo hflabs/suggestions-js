@@ -2,7 +2,6 @@ import {
   InitOptions,
   RequestSuggestionsMethod,
   Status,
-  StatusPlan,
   Suggestions,
 } from "../types";
 import { ajax, AjaxInit, AjaxResponse } from "../utils/ajax";
@@ -10,12 +9,12 @@ import { isPositiveNumber } from "../utils/isNumber";
 import { noop } from "../utils/noop";
 import { ERROR_SERVICE_UNAVAILABLE } from "../errors";
 
-export interface ApiResponseSuggestions<D> {
-  suggestions: Suggestions<D>;
+export interface ApiResponseSuggestions<SuggestionData> {
+  suggestions: Suggestions<SuggestionData>;
 }
 
-export type ApiInitOption<D> = Pick<
-  InitOptions<D>,
+export type ApiInitOption<SuggestionData> = Pick<
+  InitOptions<SuggestionData>,
   | "count"
   | "language"
   | "noCache"
@@ -30,7 +29,7 @@ export type ApiInitOption<D> = Pick<
   | "type"
 >;
 
-export default class Api<D> {
+export default class Api<SuggestionData> {
   private static pendingQueries: Record<
     string,
     Promise<AjaxResponse<unknown>>
@@ -39,15 +38,17 @@ export default class Api<D> {
     Api.pendingQueries = {};
   };
 
-  private correctCount = this.getCorrectCount();
   private typeUrl: string = this.options.type.toLowerCase();
+  private correctCount = isPositiveNumber(this.options.count)
+    ? this.options.count
+    : undefined;
 
-  constructor(private options: ApiInitOption<D>) {}
+  constructor(private options: ApiInitOption<SuggestionData>) {}
 
-  private fetch<T = unknown>(
+  private fetch<ResponseBody = unknown>(
     slug: string,
     init?: AjaxInit
-  ): Promise<AjaxResponse<T>> {
+  ): Promise<AjaxResponse<ResponseBody>> {
     const {
       noCache,
       partner,
@@ -69,8 +70,6 @@ export default class Api<D> {
     const headers: RequestInit["headers"] = {
       ...requestHeaders,
       Accept: "application/json",
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore Defined via webpack.DefinePlugin
       "X-Version": DEFINED_VERSION,
     };
 
@@ -78,7 +77,7 @@ export default class Api<D> {
     if (partner) headers["X-Partner"] = partner;
 
     const doRequest = () =>
-      ajax<T>(url, {
+      ajax<ResponseBody>(url, {
         ...init,
         headers: { ...headers, ...init?.headers },
         timeout: requestTimeout,
@@ -88,7 +87,7 @@ export default class Api<D> {
 
     const requestKey = JSON.stringify([url, init]);
     const pendingRequest = Api.pendingQueries[requestKey] as
-      | Promise<AjaxResponse<T>>
+      | Promise<AjaxResponse<ResponseBody>>
       | undefined;
 
     if (pendingRequest) return pendingRequest;
@@ -111,11 +110,7 @@ export default class Api<D> {
 
       if (!status.search) throw new Error(ERROR_SERVICE_UNAVAILABLE);
 
-      const xPlan = headers["x-plan"];
-
-      if (xPlan) status.plan = xPlan as StatusPlan;
-
-      return status;
+      return { ...status, plan: headers["x-plan"] };
     });
   }
 
@@ -123,24 +118,21 @@ export default class Api<D> {
     method: RequestSuggestionsMethod,
     query: string,
     params?: Record<string, unknown>
-  ): Promise<Suggestions<D>> {
+  ): Promise<Suggestions<SuggestionData>> {
     const { language, requestParamName, requestParams } = this.options;
 
-    return this.fetch<ApiResponseSuggestions<D>>(`${method}/${this.typeUrl}`, {
-      method: "POST",
-      body: {
-        ...requestParams,
-        [requestParamName]: query,
-        count: this.correctCount,
-        language,
-        ...params,
-      },
-    }).then((response) => response.body.suggestions);
-  }
-
-  private getCorrectCount(): number | undefined {
-    const { count } = this.options;
-
-    return isPositiveNumber(count) ? count : undefined;
+    return this.fetch<ApiResponseSuggestions<SuggestionData>>(
+      `${method}/${this.typeUrl}`,
+      {
+        method: "POST",
+        body: {
+          ...requestParams,
+          [requestParamName]: query,
+          count: this.correctCount,
+          language,
+          ...params,
+        },
+      }
+    ).then((response) => response.body.suggestions);
   }
 }

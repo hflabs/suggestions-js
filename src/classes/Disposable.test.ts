@@ -1,5 +1,4 @@
 import Disposable from "./Disposable";
-import runAllTimers = jest.runAllTimers;
 import { noop } from "../utils/noop";
 
 describe("class Disposable", () => {
@@ -59,7 +58,7 @@ describe("class Disposable", () => {
     const d = new D();
     d.dispose();
 
-    runAllTimers();
+    jest.runAllTimers();
 
     expect(fn).not.toHaveBeenCalled();
 
@@ -81,7 +80,7 @@ describe("class Disposable", () => {
     const d = new D();
     d.dispose();
 
-    runAllTimers();
+    jest.runAllTimers();
 
     expect(fn).not.toHaveBeenCalled();
 
@@ -90,9 +89,7 @@ describe("class Disposable", () => {
 
   it('should remove event listener set via "addDisposableEventListener" method', () => {
     const el = document.createElement("div");
-    const fn = jest.fn();
-
-    el.removeEventListener = fn;
+    const fn = jest.spyOn(el, "removeEventListener");
 
     class D extends Disposable {
       constructor() {

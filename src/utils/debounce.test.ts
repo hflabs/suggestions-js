@@ -25,7 +25,7 @@ describe("debounce", () => {
     expect(fn).toHaveBeenLastCalledWith("c");
   });
 
-  it("should cancel calls", () => {
+  it("should cancel pending calls", () => {
     const fn = jest.fn((a: unknown) => a);
     const debounced = debounce(fn, 10);
 

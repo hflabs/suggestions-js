@@ -3,7 +3,7 @@ import { hasQcField, hasQualityCode } from "./suggestion";
 describe("suggestion", () => {
   describe("hasQcField()", () => {
     it('should return true if "qc" field present', () => {
-      expect(hasQcField({ qc: null })).toBe(true);
+      expect(hasQcField({ qc: undefined })).toBe(true);
     });
 
     it('should return false if "qc" field absent', () => {

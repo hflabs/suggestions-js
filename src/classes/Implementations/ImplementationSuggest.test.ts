@@ -1,5 +1,5 @@
 import { ImplementationBaseOptions } from "./ImplementationBase";
-import Input, { EVENT_INPUT_CHANGE } from "../Input";
+import Input from "../Input";
 import { defaultOptions } from "../../defaultOption";
 import Api from "../Api";
 import ImplementationSuggest from "./ImplementationSuggest";
@@ -11,6 +11,7 @@ import "@testing-library/jest-dom";
 import { waitPromisesResolve } from "../../../testUtils/waitPromisesResolve";
 import { setCursorAtEnd } from "../../utils/cursor";
 import { withEl } from "../../../testUtils/withEl";
+import { withFakeTimers } from "../../../testUtils/withFakeTimers";
 
 describe("class ImplementationSuggest", () => {
   let el: HTMLInputElement;
@@ -26,10 +27,13 @@ describe("class ImplementationSuggest", () => {
     server.restore();
   });
 
-  const withInstance = async (
+  const withInstance = (
     customOptions: Partial<ImplementationBaseOptions<unknown>> | null,
-    fn: (instance: ImplementationSuggest<unknown>, input: Input) => void
-  ): Promise<void> => {
+    fn: (
+      instance: ImplementationSuggest<unknown>,
+      input: Input
+    ) => Promise<void> | void
+  ): Promise<void> | void => {
     const options = {
       ...defaultOptions,
       type: "some-type",
@@ -45,19 +49,43 @@ describe("class ImplementationSuggest", () => {
       input,
     });
 
-    await fn(instance, input);
+    const cleanup = () => instance.dispose();
+    const result = fn(instance, input);
 
-    instance.dispose();
+    if (result instanceof Promise) return result.finally(cleanup);
+
+    cleanup();
+    return result;
   };
 
-  const simulateInputChange = (input: Input, value: string) => {
-    input.setValue(value);
-    el.dispatchEvent(new Event(EVENT_INPUT_CHANGE));
+  const simulateInputChange = (value: string) => {
+    // Change a value, focus the input to read new value, wait for debouncing to complete
+    withFakeTimers(() => {
+      el.value = value;
+      el.dispatchEvent(new InputEvent("input"));
+      // Wait for debounce of handleChange to complete
+      jest.runOnlyPendingTimers();
+      // Wait for debounce of dispatching EVENT_INPUT_CHANGE to complete
+      jest.runOnlyPendingTimers();
+    });
   };
 
-  it("should send a request when input value changed", async () => {
-    await withInstance(null, (_, input) => {
-      simulateInputChange(input, "some text");
+  const expectPopoverOpen = () => {
+    expect(
+      document.getElementsByClassName(popoverSass.popover)[0]
+    ).toBeTruthy();
+  };
+
+  const expectPopoverClose = () => {
+    expect(
+      document.getElementsByClassName(popoverSass.popover)[0]
+    ).toBeUndefined();
+  };
+
+  it("should send a request when input value changed", () => {
+    withInstance(null, () => {
+      simulateInputChange("some text");
+
       expect(server.requests).toHaveLength(1);
       expect(JSON.parse(server.requests[0].requestBody)).toMatchObject({
         [defaultOptions.requestParamName]: "some text",
@@ -66,34 +94,19 @@ describe("class ImplementationSuggest", () => {
     });
   });
 
-  it("should not send a request when input value changed but is not requestable", async () => {
-    await withInstance(
-      {
-        minLength: 10,
-      },
-      (_, input) => {
-        simulateInputChange(input, "a");
-        expect(server.requests).toHaveLength(0);
-      }
-    );
-  });
+  it("should not send a request when input value changed but is not requestable", () => {
+    withInstance({ minLength: 10 }, () => {
+      simulateInputChange("a");
 
-  it("should send a request when input focused", async () => {
-    await withInstance(null, (_, input) => {
-      input.setValue("some text");
-      el.focus();
-      expect(server.requests).toHaveLength(1);
-      expect(JSON.parse(server.requests[0].requestBody)).toMatchObject({
-        [defaultOptions.requestParamName]: "some text",
-        count: defaultOptions.count,
-      });
+      expect(server.requests).toHaveLength(0);
     });
   });
 
-  it("should send a request when down key pressed", async () => {
-    await withInstance(null, (_, input) => {
+  it("should send a request when down key pressed", () => {
+    withInstance(null, (_, input) => {
       input.setValue("some text");
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+
       expect(server.requests).toHaveLength(1);
       expect(JSON.parse(server.requests[0].requestBody)).toMatchObject({
         [defaultOptions.requestParamName]: "some text",
@@ -103,73 +116,59 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should open popover when request succeeded with suggestions", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(3));
-      expect(document.getElementsByClassName(popoverSass.popover)).toHaveLength(
-        1
-      );
+
+      expectPopoverOpen();
     });
   });
 
   it("should open popover when request succeeded with no suggestions", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
+      simulateInputChange("some text");
       await respondWithSuggestions(server, []);
-      expect(document.getElementsByClassName(popoverSass.popover)).toHaveLength(
-        1
-      );
+
+      expectPopoverOpen();
     });
   });
 
   it("should close popover when Esc key is pressed", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
+    await withInstance(null, async () => {
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(3));
 
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 
-      expect(document.getElementsByClassName(popoverSass.popover)).toHaveLength(
-        0
-      );
+      expectPopoverClose();
     });
   });
 
   it("should close popover when fetched one suggestion same as selected suggestion", async () => {
-    await withInstance(
-      {
-        triggerSelectOnSpace: true,
-      },
-      async (_, input) => {
-        const suggestions = createSuggestions(3);
+    await withInstance({ triggerSelectOnSpace: true }, async () => {
+      const suggestions = createSuggestions(3);
 
-        el.focus();
-        simulateInputChange(input, "some text");
-        await respondWithSuggestions(server, suggestions);
+      simulateInputChange("some text");
+      await respondWithSuggestions(server, suggestions);
 
-        setCursorAtEnd(el);
-        el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
-        el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
+      el.focus();
+      setCursorAtEnd(el);
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
-        // Selecting is async
-        await waitPromisesResolve();
+      // Selecting is async
+      await waitPromisesResolve();
 
-        expect(server.requests).toHaveLength(2);
-        await respondWithSuggestions(server, [suggestions[0]]);
+      expect(server.requests).toHaveLength(2);
+      await respondWithSuggestions(server, [suggestions[0]]);
 
-        expect(
-          document.getElementsByClassName(popoverSass.popover)
-        ).toHaveLength(0);
-      }
-    );
+      expectPopoverClose();
+    });
   });
 
   it("should highlight first suggestion in the list if down key pressed when popover is open", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(3));
 
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
@@ -181,10 +180,10 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight next suggestion in the list if down key pressed when popover is open", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
       const suggestionsCount = 5;
+
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(suggestionsCount));
 
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
@@ -197,10 +196,10 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight previous suggestion in the list if up key pressed when popover is open", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
       const suggestionsCount = 5;
+
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(suggestionsCount));
 
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp" }));
@@ -213,10 +212,10 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight last suggestion in the list if up key pressed when popover is open", async () => {
-    await withInstance(null, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async () => {
       const suggestionsCount = 5;
+
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(suggestionsCount));
 
       el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp" }));
@@ -228,10 +227,10 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight the first suggestion in the list if autoHighlightFirst option is true", async () => {
-    await withInstance({ autoHighlightFirst: true }, async (_, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance({ autoHighlightFirst: true }, async () => {
       const suggestionsCount = 5;
+
+      simulateInputChange("some text");
       await respondWithSuggestions(server, createSuggestions(suggestionsCount));
 
       expect(document.getElementsByClassName(popoverSass.item)[0]).toHaveClass(
@@ -241,14 +240,14 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight previously selected suggestion", async () => {
-    await withInstance(null, async (instance, input) => {
-      simulateInputChange(input, "some text");
-
+    await withInstance(null, async (instance) => {
       const suggestionsCount = 5;
       const suggestions = createSuggestions(suggestionsCount);
 
+      simulateInputChange("some text");
+
       const selectedSuggestionsIndex = 2;
-      // Call property
+      // Set to private property
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       instance.currentSuggestion = suggestions[selectedSuggestionsIndex];
@@ -264,13 +263,12 @@ describe("class ImplementationSuggest", () => {
   });
 
   it("should highlight a suggestion with value matching input value", async () => {
-    await withInstance(null, async (_, input) => {
+    await withInstance(null, async () => {
       const suggestionsCount = 5;
       const suggestions = createSuggestions(suggestionsCount);
       const selectedSuggestionsIndex = 2;
 
-      simulateInputChange(input, suggestions[selectedSuggestionsIndex].value);
-
+      simulateInputChange(suggestions[selectedSuggestionsIndex].value);
       await respondWithSuggestions(server, suggestions);
 
       expect(
@@ -283,13 +281,13 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelect when suggestion in the list is clicked", async () => {
     const onSelect = jest.fn();
-    await withInstance({ onSelect }, async (_, input) => {
+
+    await withInstance({ onSelect }, async () => {
       const suggestionsCount = 5;
       const suggestions = createSuggestions(suggestionsCount);
       const selectedSuggestionsIndex = 2;
 
-      simulateInputChange(input, suggestions[selectedSuggestionsIndex].value);
-
+      simulateInputChange(suggestions[selectedSuggestionsIndex].value);
       await respondWithSuggestions(server, suggestions);
 
       const items = document.getElementsByClassName(popoverSass.item);
@@ -310,13 +308,13 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onInvalidateSelection when input value change", async () => {
     const onInvalidateSelection = jest.fn();
-    await withInstance({ onInvalidateSelection }, async (_, input) => {
+
+    await withInstance({ onInvalidateSelection }, async () => {
       const suggestionsCount = 5;
       const suggestions = createSuggestions(suggestionsCount);
       const selectedSuggestionsIndex = 2;
 
-      simulateInputChange(input, suggestions[selectedSuggestionsIndex].value);
-
+      simulateInputChange(suggestions[selectedSuggestionsIndex].value);
       await respondWithSuggestions(server, suggestions);
 
       const items = document.getElementsByClassName(popoverSass.item);
@@ -327,7 +325,7 @@ describe("class ImplementationSuggest", () => {
       // Selecting is async
       await waitPromisesResolve();
 
-      simulateInputChange(input, "some other text");
+      simulateInputChange("some other text");
 
       expect(onInvalidateSelection).toHaveBeenCalledWith(
         suggestions[selectedSuggestionsIndex],
@@ -338,13 +336,14 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelectNothing when Enter pressed and no suggestion highlighted", async () => {
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelectNothing,
         triggerSelectOnEnter: true,
       },
-      async (_, input) => {
-        simulateInputChange(input, "some text");
+      async () => {
+        simulateInputChange("some text");
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
@@ -359,15 +358,16 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelect when Enter pressed and some suggestion is highlighted", async () => {
     const onSelect = jest.fn();
+
     await withInstance(
       {
         onSelect,
         triggerSelectOnEnter: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
@@ -384,14 +384,15 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when Enter pressed and triggerSelectOnEnter is false", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
         onSelectNothing,
         triggerSelectOnEnter: false,
       },
-      async (_, input) => {
-        simulateInputChange(input, "some text");
+      async () => {
+        simulateInputChange("some text");
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
@@ -408,6 +409,7 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when Enter pressed and popover is not open", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
@@ -428,19 +430,20 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelectNothing when space pressed and no suggestion highlighted", async () => {
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelectNothing,
         triggerSelectOnSpace: true,
       },
-      async (_, input) => {
+      async () => {
         const query = "some text";
-        simulateInputChange(input, query);
+
+        simulateInputChange(query);
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.focus();
         setCursorAtEnd(el);
-
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
         // Selecting is async
@@ -453,20 +456,20 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelect when space pressed and some suggestion is highlighted", async () => {
     const onSelect = jest.fn();
+
     await withInstance(
       {
         onSelect,
         triggerSelectOnSpace: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
         el.focus();
         setCursorAtEnd(el);
-
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
@@ -481,16 +484,19 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when space pressed and triggerSelectOnSpace is false", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
         onSelectNothing,
         triggerSelectOnSpace: false,
       },
-      async (_, input) => {
-        simulateInputChange(input, "some text");
+      async () => {
+        simulateInputChange("some text");
         await respondWithSuggestions(server, createSuggestions(5));
 
+        el.focus();
+        setCursorAtEnd(el);
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
         // Selecting is async
@@ -505,6 +511,7 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when space pressed and popover is not open", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
@@ -512,6 +519,8 @@ describe("class ImplementationSuggest", () => {
         triggerSelectOnEnter: true,
       },
       async () => {
+        el.focus();
+        setCursorAtEnd(el);
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
         // Selecting is async
@@ -525,19 +534,21 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelectNothing when input looses focus and no suggestion highlighted", async () => {
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelectNothing,
         triggerSelectOnBlur: true,
       },
-      async (_, input) => {
+      async () => {
         const query = "some text";
-        simulateInputChange(input, query);
+
+        simulateInputChange(query);
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.focus();
-        withEl((el2) => {
-          el2.focus();
+        withEl((anotherInput) => {
+          anotherInput.focus();
         });
 
         // Selecting is async
@@ -550,21 +561,22 @@ describe("class ImplementationSuggest", () => {
 
   it("should trigger onSelect when input looses focus and some suggestion is highlighted", async () => {
     const onSelect = jest.fn();
+
     await withInstance(
       {
         onSelect,
         triggerSelectOnBlur: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
         el.focus();
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
-        withEl((el2) => {
-          el2.focus();
+        withEl((anotherInput) => {
+          anotherInput.focus();
         });
 
         // Selecting is async
@@ -578,19 +590,20 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when input looses focus and triggerSelectOnBlur is false", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
         onSelectNothing,
         triggerSelectOnBlur: false,
       },
-      async (_, input) => {
-        simulateInputChange(input, "some text");
+      async () => {
+        simulateInputChange("some text");
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.focus();
-        withEl((el2) => {
-          el2.focus();
+        withEl((anotherInput) => {
+          anotherInput.focus();
         });
 
         // Selecting is async
@@ -605,14 +618,15 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when input looses focus because of click on popover", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
         onSelectNothing,
         triggerSelectOnBlur: true,
       },
-      async (_, input) => {
-        simulateInputChange(input, "some text");
+      async () => {
+        simulateInputChange("some text");
         await respondWithSuggestions(server, createSuggestions(5));
 
         el.focus();
@@ -633,19 +647,18 @@ describe("class ImplementationSuggest", () => {
   it("should not trigger neither onSelect nor onSelectNothing when space pressed and popover is not open", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
+
     await withInstance(
       {
         onSelect,
         onSelectNothing,
-        triggerSelectOnBlur: true,
+        triggerSelectOnSpace: true,
       },
-      async (_, input) => {
-        input.setValue("some text");
-
+      async () => {
+        simulateInputChange("some text");
         el.focus();
-        withEl((el2) => {
-          el2.focus();
-        });
+        setCursorAtEnd(el);
+        el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
         // Selecting is async
         await waitPromisesResolve();
@@ -656,8 +669,8 @@ describe("class ImplementationSuggest", () => {
     );
   });
 
-  it("should set cursor at the end when input focused and device is mobile", async () => {
-    await withInstance(
+  it("should set cursor at the end when input focused and device is mobile", () => {
+    withInstance(
       {
         mobileMaxWidth: window.innerWidth + 1,
       },
@@ -675,7 +688,7 @@ describe("class ImplementationSuggest", () => {
     );
   });
 
-  it("should not start selecting on blur if focused on one of helperElements", async () => {
+  it("should not start selecting on blur if focused one of helperElements", async () => {
     const onSelect = jest.fn();
     const onSelectNothing = jest.fn();
 
@@ -687,8 +700,8 @@ describe("class ImplementationSuggest", () => {
           triggerSelectOnBlur: true,
           helperElements: [helperElement],
         },
-        async (_, input) => {
-          simulateInputChange(input, "some text");
+        async () => {
+          simulateInputChange("some text");
           await respondWithSuggestions(server, createSuggestions(5));
 
           el.focus();
@@ -716,8 +729,8 @@ describe("class ImplementationSuggest", () => {
           triggerSelectOnBlur: true,
           helperElements: [helperElement],
         },
-        async (_, input) => {
-          simulateInputChange(input, "some text");
+        async () => {
+          simulateInputChange("some text");
           await respondWithSuggestions(server, createSuggestions(5));
 
           el.focus();
@@ -745,13 +758,13 @@ describe("class ImplementationSuggest", () => {
         triggerSelectOnEnter: true,
         triggerSelectOnSpace: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        el.focus();
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
+        el.focus();
         setCursorAtEnd(el);
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
@@ -767,6 +780,8 @@ describe("class ImplementationSuggest", () => {
         expect(
           document.getElementsByClassName(popoverSass.item)[0]
         ).toHaveClass(popoverSass.isHighlighted);
+
+        // Try to select highlighted item
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
 
         // Selecting is async
@@ -786,13 +801,13 @@ describe("class ImplementationSuggest", () => {
         onSelect,
         triggerSelectOnSpace: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        el.focus();
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
+        el.focus();
         setCursorAtEnd(el);
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
@@ -808,6 +823,8 @@ describe("class ImplementationSuggest", () => {
         expect(
           document.getElementsByClassName(popoverSass.item)[0]
         ).toHaveClass(popoverSass.isHighlighted);
+
+        // Try to select highlighed item
         el.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
 
         // Selecting is async
@@ -829,10 +846,10 @@ describe("class ImplementationSuggest", () => {
         enrichmentEnabled: true,
         triggerSelectOnEnter: true,
       },
-      async (_, input) => {
+      async () => {
         const suggestions = createSuggestions(5);
 
-        simulateInputChange(input, "some text");
+        simulateInputChange("some text");
         await respondWithSuggestions(server, suggestions);
 
         el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
@@ -856,7 +873,7 @@ describe("class ImplementationSuggest", () => {
         await respondWithSuggestions(server, [enrichedSuggestion]);
 
         // Selecting is async
-        // await waitPromisesResolve();
+        await waitPromisesResolve();
 
         // onSelect not triggered again
         expect(onSelect).toHaveBeenCalledWith(enrichedSuggestion, true, el);

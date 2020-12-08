@@ -29,7 +29,7 @@ describe("class Api", () => {
     server.restore();
   });
 
-  describe(".status()", () => {
+  describe("status()", () => {
     it("should request status", () => {
       new Api(apiOptions).status().catch(noop);
 
@@ -86,7 +86,7 @@ describe("class Api", () => {
     });
   });
 
-  describe(".fetchSuggestions()", () => {
+  describe("fetchSuggestions()", () => {
     it("should request suggestions", () => {
       new Api(apiOptions)
         .fetchSuggestions("suggest", "дерибасовская")

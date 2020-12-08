@@ -22,7 +22,7 @@ describe("throttle", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("should invoke a single function oly once", () => {
+  it("should invoke a single function only once", () => {
     const fn = jest.fn((a: unknown) => a);
     const throttled = throttle(fn, 10);
 
@@ -60,7 +60,7 @@ describe("throttle", () => {
     expect(fn).toHaveBeenLastCalledWith("c");
   });
 
-  it("should cancel calls", () => {
+  it("should cancel pending calls", () => {
     const fn = jest.fn((a: unknown) => a);
     const debounced = throttle(fn, 10);
 

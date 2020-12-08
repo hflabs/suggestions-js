@@ -3,6 +3,12 @@ import { defaultOptions } from "../defaultOption";
 import { noop } from "../utils/noop";
 import popoverSass from "./Popover.sass";
 import "@testing-library/jest-dom";
+import { withMockedProperty } from "../../testUtils/withMockedProperty";
+import { withFakeTimers } from "../../testUtils/withFakeTimers";
+import { withElementMoved } from "../../testUtils/withElementMoved";
+
+const getElementByClassName = (className: string) =>
+  document.getElementsByClassName(className)[0];
 
 describe("class Popover", () => {
   const initOptions: PopoverInitOptions = {
@@ -26,42 +32,34 @@ describe("class Popover", () => {
   });
 
   const withPopover = (
-    options: PopoverInitOptions,
+    options: Partial<PopoverInitOptions> | null,
     fn: (popover: Popover) => void
   ): void => {
-    const popover = new Popover(el, options);
+    const popover = new Popover(el, { ...initOptions, ...options });
     fn(popover);
     popover.dispose();
   };
 
   it("should render root element", () => {
-    withPopover(initOptions, () => {
-      expect(document.getElementsByClassName(popoverSass.popover)).toHaveLength(
-        1
-      );
+    withPopover(null, () => {
+      expect(getElementByClassName(popoverSass.popover)).toBeInTheDocument();
     });
   });
 
   it("should render root element with custom class", () => {
-    withPopover(
-      { ...initOptions, classNames: { popover: "custom-popover-class" } },
-      () => {
-        expect(
-          document.getElementsByClassName("custom-popover-class")
-        ).toHaveLength(1);
-      }
-    );
+    withPopover({ classNames: { popover: "custom-popover-class" } }, () => {
+      expect(getElementByClassName("custom-popover-class")).toBeInTheDocument();
+    });
   });
 
   it("should render hint", () => {
     withPopover(
       {
-        ...initOptions,
         classNames: { hint: "hint-class" },
         items: ["item1"],
       },
       () => {
-        const hint = document.getElementsByClassName("hint-class")[0];
+        const hint = getElementByClassName("hint-class");
 
         expect(hint).toBeInstanceOf(HTMLElement);
         expect((hint as HTMLElement).textContent).toBe(initOptions.hint);
@@ -72,12 +70,11 @@ describe("class Popover", () => {
   it("should render hint when no items present", () => {
     withPopover(
       {
-        ...initOptions,
         classNames: { hint: "hint-class" },
         items: [],
       },
       () => {
-        const hint = document.getElementsByClassName("hint-class")[0];
+        const hint = getElementByClassName("hint-class");
 
         expect(hint).toBeInstanceOf(HTMLElement);
         expect((hint as HTMLElement).textContent).toBe(
@@ -88,32 +85,23 @@ describe("class Popover", () => {
   });
 
   it("should render promo", () => {
-    withPopover(
-      {
-        ...initOptions,
-        showPromo: true,
-      },
-      () => {
-        const promo = document.getElementsByClassName(popoverSass.promo)[0];
+    withPopover({ showPromo: true }, () => {
+      const promo = getElementByClassName(popoverSass.promo);
 
-        expect(promo).toBeInstanceOf(HTMLAnchorElement);
-        expect(promo?.children[0]).toBeInstanceOf(SVGElement);
-      }
-    );
+      expect(promo).toBeInstanceOf(HTMLAnchorElement);
+      expect(promo?.children[0]).toBeInstanceOf(SVGElement);
+    });
   });
 
   it("should render items at the very top when no promo and no hint to display", () => {
     withPopover(
       {
-        ...initOptions,
         hint: "",
         noSuggestionsHint: "",
         showPromo: false,
       },
       () => {
-        expect(document.getElementsByClassName(popoverSass.hint)).toHaveLength(
-          0
-        );
+        expect(getElementByClassName(popoverSass.hint)).toBeUndefined();
       }
     );
   });
@@ -123,7 +111,6 @@ describe("class Popover", () => {
 
     withPopover(
       {
-        ...initOptions,
         classNames: { item: "item-class" },
         items: Array.from(Array(itemsCount)).map((_, i) => `item${i}`),
       },
@@ -138,8 +125,8 @@ describe("class Popover", () => {
   it("should render items set with .setItems", () => {
     const itemsCount = 5;
 
-    withPopover(initOptions, (popover) => {
-      expect(document.getElementsByClassName(popoverSass.item)).toHaveLength(0);
+    withPopover(null, (popover) => {
+      expect(getElementByClassName(popoverSass.item)).toBeUndefined();
 
       popover.setItems(Array.from(Array(itemsCount)).map((_, i) => `item${i}`));
 
@@ -155,7 +142,6 @@ describe("class Popover", () => {
 
     withPopover(
       {
-        ...initOptions,
         items: Array.from(Array(itemsCount)).map((_, i) => `item${i}`),
       },
       (popover) => {
@@ -163,17 +149,17 @@ describe("class Popover", () => {
 
         expect(items).toHaveLength(itemsCount);
         expect(
-          document.getElementsByClassName(popoverSass.isHighlighted)
-        ).toHaveLength(0);
+          getElementByClassName(popoverSass.isHighlighted)
+        ).toBeUndefined();
 
         popover.highlightItem(highlightedItemIndex);
 
-        const highlightedItems = document.getElementsByClassName(
+        const highlightedItem = getElementByClassName(
           popoverSass.isHighlighted
         );
 
-        expect(highlightedItems).toHaveLength(1);
-        expect(highlightedItems[0]).toBe(items.item(highlightedItemIndex));
+        expect(highlightedItem).toBeInTheDocument();
+        expect(highlightedItem).toBe(items.item(highlightedItemIndex));
       }
     );
   });
@@ -183,7 +169,6 @@ describe("class Popover", () => {
 
     withPopover(
       {
-        ...initOptions,
         items: ["item"],
         showPromo: true,
         onMousedown: fn,
@@ -207,7 +192,6 @@ describe("class Popover", () => {
 
     withPopover(
       {
-        ...initOptions,
         items: ["item1", "item2"],
         onItemClick,
       },
@@ -223,45 +207,90 @@ describe("class Popover", () => {
     );
   });
 
-  it("should toggle styles for mobile screens", () => {
-    const innerWidthDescriptor = Object.getOwnPropertyDescriptor(
-      window,
-      "innerWidth"
-    );
+  it("should switch to mobile styles for narrow screens", () => {
+    withFakeTimers(() => {
+      withPopover(null, () => {
+        withMockedProperty(window, "innerWidth", 1, () => {
+          // Resize handler is throttled, let previous update to fulfil
+          jest.runAllTimers();
+          window.dispatchEvent(new Event("resize"));
 
-    if (!innerWidthDescriptor)
-      throw new Error("Can not mock window innerWidth");
-
-    jest.useFakeTimers();
-    withPopover(initOptions, () => {
-      // Simulate window is resized to mobile
-      Object.defineProperty(window, "innerWidth", {
-        value: 1,
+          expect(getElementByClassName(popoverSass.popover)).toHaveClass(
+            popoverSass.isMobile
+          );
+        });
       });
-
-      // Resize handler is throttled
-      jest.runAllTimers();
-      window.dispatchEvent(new Event("resize"));
-
-      expect(
-        document.getElementsByClassName(popoverSass.popover)[0]
-      ).toHaveClass(popoverSass.isMobile);
-
-      // Simulate window is resized to desktop
-      Object.defineProperty(window, "innerWidth", {
-        value: 1024,
-      });
-
-      // Resize handler is throttled
-      jest.runAllTimers();
-      window.dispatchEvent(new Event("resize"));
-
-      expect(
-        document.getElementsByClassName(popoverSass.popover)[0]
-      ).not.toHaveClass(popoverSass.isMobile);
     });
-    jest.useRealTimers();
+  });
 
-    Object.defineProperty(window, "innerWidth", innerWidthDescriptor);
+  it("should not switch to mobile styles when no mobileMaxWidth provided", () => {
+    withFakeTimers(() => {
+      withPopover({ mobileMaxWidth: 0 }, () => {
+        withMockedProperty(window, "innerWidth", 1, () => {
+          // Resize handler is throttled, let previous update to fulfil
+          jest.runAllTimers();
+          window.dispatchEvent(new Event("resize"));
+
+          expect(getElementByClassName(popoverSass.popover)).not.toHaveClass(
+            popoverSass.isMobile
+          );
+        });
+      });
+    });
+  });
+
+  it("should switch styles to desktop for wide screens", () => {
+    withFakeTimers(() => {
+      withMockedProperty(window, "innerWidth", 1, () => {
+        withPopover(null, () => {
+          withMockedProperty(window, "innerWidth", 1024, () => {
+            // Resize handler is throttled, let previous update to fulfil
+            jest.runAllTimers();
+            window.dispatchEvent(new Event("resize"));
+
+            expect(getElementByClassName(popoverSass.popover)).not.toHaveClass(
+              popoverSass.isMobile
+            );
+          });
+        });
+      });
+    });
+  });
+
+  it("should align with animationFrame", () => {
+    const requestAnimationFrame = jest.fn();
+
+    withMockedProperty(
+      window,
+      "requestAnimationFrame",
+      requestAnimationFrame,
+      () => {
+        withPopover(null, () => {
+          withElementMoved(el, () => {
+            document.body.dispatchEvent(new Event("scroll"));
+            expect(requestAnimationFrame).toHaveBeenCalled();
+          });
+        });
+      }
+    );
+  });
+
+  it("should align with throttled align", () => {
+    withMockedProperty(window, "requestAnimationFrame", null, () => {
+      withFakeTimers(() => {
+        withPopover(null, (instance) => {
+          // Spy on private method
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
+          const alignSpy = jest.spyOn(instance, "align");
+
+          withElementMoved(el, () => {
+            document.body.dispatchEvent(new Event("scroll"));
+            jest.runAllTimers();
+            expect(alignSpy).toHaveBeenCalled();
+          });
+        });
+      });
+    });
   });
 });

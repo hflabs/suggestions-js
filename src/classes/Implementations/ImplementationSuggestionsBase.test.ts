@@ -11,7 +11,8 @@ import { createSuggestions } from "../../../testUtils/createSuggestions";
 import { ERROR_FETCH_ABORTED } from "../../errors";
 
 describe("class ImplementationSuggestionsBase", () => {
-  // Define class over abstract, make protected methods public
+  // Define concrete class over an abstract class
+  // Make protected methods public
   class ImplementationTest extends ImplementationSuggestionsBase<unknown> {
     public fetchSuggestions(
       query: string,
@@ -22,19 +23,23 @@ describe("class ImplementationSuggestionsBase", () => {
   }
 
   let el: HTMLInputElement;
+  let server: SinonFakeServer;
 
   beforeEach(() => {
     el = document.body.appendChild(document.createElement("input"));
+    server = sinon.useFakeServer();
+    Api.resetPendingQueries();
   });
 
   afterEach(() => {
     document.body.removeChild(el);
+    server.restore();
   });
 
-  const withInstance = async (
+  const withInstance = (
     customOptions: Partial<ImplementationBaseOptions<unknown>> | null,
-    fn: (instance: ImplementationTest) => void
-  ): Promise<void> => {
+    fn: (instance: ImplementationTest) => Promise<void> | void
+  ): Promise<void> | void => {
     const options = {
       ...defaultOptions,
       type: "some-type",
@@ -48,26 +53,16 @@ describe("class ImplementationSuggestionsBase", () => {
       api,
       input,
     });
+    const cleanup = () => instance.dispose();
+    const result = fn(instance);
 
-    await fn(instance);
+    if (result instanceof Promise) return result.finally(cleanup);
 
-    instance.dispose();
+    cleanup();
+    return result;
   };
 
-  beforeEach(() => {
-    Api.resetPendingQueries();
-  });
   describe("fetchSuggestions()", () => {
-    let server: SinonFakeServer;
-
-    beforeEach(() => {
-      server = sinon.useFakeServer();
-    });
-
-    afterEach(() => {
-      server.restore();
-    });
-
     it("should send request every time if noCache is true", async () => {
       await withInstance({ noCache: true }, async (instance) => {
         for (let i = 0; i < 3; i++) {
@@ -101,13 +96,7 @@ describe("class ImplementationSuggestionsBase", () => {
 
         expect(server.requests).toHaveLength(3);
 
-        const suggestions = [
-          {
-            value: "value",
-            unrestricted_value: "unrestricted_value",
-            data: null,
-          },
-        ];
+        const suggestions = createSuggestions(3);
         await respondWithSuggestions(server, suggestions);
 
         await expect(calls[0]).rejects.toThrow(ERROR_FETCH_ABORTED);
@@ -119,13 +108,7 @@ describe("class ImplementationSuggestionsBase", () => {
     it("should resolve with suggestions", async () => {
       await withInstance(null, async (instance) => {
         const call = instance.fetchSuggestions("query");
-        const suggestions: Suggestions<null> = Array.from(new Array(5)).map(
-          (_, i) => ({
-            value: `suggestion value ${i}`,
-            unrestricted_value: `suggestion unrestricted_value ${i}`,
-            data: null,
-          })
-        );
+        const suggestions = createSuggestions(5);
 
         await respondWithSuggestions(server, suggestions);
         await expect(call).resolves.toEqual(suggestions);
@@ -150,10 +133,10 @@ describe("class ImplementationSuggestionsBase", () => {
 
           await respondWithSuggestions(server, []);
           await firstCall;
+
           await expect(
             instance.fetchSuggestions("query that narrows previous")
           ).resolves.toEqual([]);
-
           expect(server.requests).toHaveLength(1);
         });
       });
@@ -161,8 +144,8 @@ describe("class ImplementationSuggestionsBase", () => {
       it("should send request if no shorter queries finished without suggestions found", async () => {
         await withInstance({ preventBadQueries: true }, async (instance) => {
           const firstCall = instance.fetchSuggestions("query");
-          await respondWithSuggestions(server, createSuggestions(1));
 
+          await respondWithSuggestions(server, createSuggestions(1));
           await firstCall;
 
           instance.fetchSuggestions("query that narrows previous").catch(noop);

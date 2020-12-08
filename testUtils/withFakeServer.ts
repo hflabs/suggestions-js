@@ -1,11 +1,11 @@
 import sinon, { SinonFakeServer } from "sinon";
-import { Suggestions } from "../src/types";
+import { Status, Suggestions } from "../src/types";
 import { ApiResponseSuggestions } from "../src/classes/Api";
 import { waitPromisesResolve } from "./waitPromisesResolve";
 
-export const respondWithJSON = async <T = unknown>(
+export const respondWithJSON = async <Payload = unknown>(
   server: SinonFakeServer,
-  payload: T
+  payload: Payload
 ) => {
   server.respondWith([
     200,
@@ -16,37 +16,48 @@ export const respondWithJSON = async <T = unknown>(
   await waitPromisesResolve();
 };
 
-export const respondWithSuggestions = async <D = unknown>(
+export const respondWithStatus = async (
   server: SinonFakeServer,
-  suggestions: Suggestions<D>
+  status: Partial<Status>
 ): Promise<void> => {
-  await respondWithJSON<ApiResponseSuggestions<D>>(server, {
+  await respondWithJSON(server, status);
+};
+
+export const respondWithSuggestions = async <SuggestionData = unknown>(
+  server: SinonFakeServer,
+  suggestions: Suggestions<SuggestionData>
+): Promise<void> => {
+  await respondWithJSON<ApiResponseSuggestions<SuggestionData>>(server, {
     suggestions,
   });
 };
 
 interface FakeServer extends SinonFakeServer {
-  respondWithJSON: <T = unknown>(
+  respondWithJSON: <Payload = unknown>(
     server: SinonFakeServer,
-    payload: T
+    payload: Payload
   ) => Promise<void>;
-  respondWithSuggestions: <D = unknown>(
-    suggestions: Suggestions<D>
+  respondWithSuggestions: <SuggestionData = unknown>(
+    suggestions: Suggestions<SuggestionData>
   ) => Promise<void>;
 }
 
-export const withFakeServer = async (
+export const withFakeServer = (
   fn: (server: FakeServer) => Promise<void> | void
-): Promise<void> => {
+): Promise<void> | void => {
   const server = sinon.useFakeServer();
-
-  await fn({
+  const cleanup = () => server.restore();
+  const result = fn({
     ...server,
-    respondWithJSON: <T = unknown>(payload: T) =>
+    respondWithJSON: <Payload = unknown>(payload: Payload) =>
       respondWithJSON(server, payload),
-    respondWithSuggestions: <D = unknown>(suggestions: Suggestions<D>) =>
-      respondWithSuggestions(server, suggestions),
+    respondWithSuggestions: <SuggestionData = unknown>(
+      suggestions: Suggestions<SuggestionData>
+    ) => respondWithSuggestions(server, suggestions),
   });
 
-  server.restore();
+  if (result instanceof Promise) return result.finally(cleanup);
+
+  cleanup();
+  return result;
 };

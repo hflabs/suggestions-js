@@ -1,27 +1,43 @@
 import Disposable from "./Disposable";
+import { deepEqual } from "../utils/deepEqual";
 
 /**
- * Observer position of `target` element (relative to document) changed
+ * Observe when position of `target` element changed relatively to document
  */
 export default class PositionObserver extends Disposable {
-  constructor(private target: Element, private onShouldAlign: () => void) {
+  private targetRect = this.target.getBoundingClientRect();
+
+  constructor(private target: Element, private onPositionChange: () => void) {
     super();
     this.observeParentsScroll();
     this.observeDomChanges();
-    this.addDisposableEventListener(window, "resize", this.onShouldAlign);
+    this.addDisposableEventListener(
+      window,
+      "resize",
+      this.handleDocumentChange
+    );
     this.addDisposableEventListener(
       document,
       "transitionend",
-      this.onShouldAlign
+      this.handleDocumentChange
     );
   }
+
+  private handleDocumentChange = () => {
+    const rect = this.target.getBoundingClientRect();
+
+    if (!deepEqual(rect, this.targetRect)) {
+      this.targetRect = rect;
+      this.onPositionChange();
+    }
+  };
 
   /**
    * Track `target` element is scrolled.
    * `scroll` event does not bubble, so listen to all parents of the `target` element
    */
   private observeParentsScroll() {
-    const targetParents: (Element | Window)[] = [];
+    const targetParents: Element[] = [];
     let parent: Element | null = this.target.parentElement;
 
     while (parent) {
@@ -30,7 +46,7 @@ export default class PositionObserver extends Disposable {
     }
 
     targetParents.forEach((el) =>
-      this.addDisposableEventListener(el, "scroll", this.onShouldAlign)
+      this.addDisposableEventListener(el, "scroll", this.handleDocumentChange)
     );
   }
 
@@ -39,7 +55,7 @@ export default class PositionObserver extends Disposable {
    */
   private observeDomChanges() {
     if (typeof MutationObserver === "function") {
-      const observer = new MutationObserver(this.onShouldAlign);
+      const observer = new MutationObserver(this.handleDocumentChange);
 
       observer.observe(document.body, {
         subtree: true,
@@ -49,7 +65,7 @@ export default class PositionObserver extends Disposable {
 
       this.onDispose(() => observer.disconnect());
     } else {
-      this.setDisposableInterval(this.onShouldAlign, 1000);
+      this.setDisposableInterval(this.handleDocumentChange, 1000);
     }
   }
 }

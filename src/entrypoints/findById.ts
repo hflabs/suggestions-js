@@ -18,10 +18,11 @@ import {
  * @param {HTMLInputElement} el
  * @param {Partial<InitOptions>} options
  */
-export const init = <D = unknown>(
+export const init = <SuggestionData = unknown>(
   el: HTMLInputElement,
-  options: Partial<InitOptions<D>>
-): (() => void) => initInstance<D>(el, options, ImplementationFindById);
+  options: Partial<InitOptions<SuggestionData>>
+): (() => void) =>
+  initInstance<SuggestionData>(el, options, ImplementationFindById);
 
 /**
  * Invokes some public method of implementation
@@ -31,18 +32,16 @@ export const init = <D = unknown>(
  * @param {any[]} args
  */
 export const execMethod = <
-  SuggestionDataType,
-  Methods extends FunctionPropertyNames<
-    ImplementationFindById<SuggestionDataType>
-  >
+  SuggestionData,
+  Methods extends FunctionPropertyNames<ImplementationFindById<SuggestionData>>
 >(
   el: HTMLInputElement,
   method: Methods,
-  ...args: Parameters<ImplementationFindById<SuggestionDataType>[Methods]>
-): Promise<ReturnType<ImplementationFindById<SuggestionDataType>[Methods]>> =>
+  ...args: Parameters<ImplementationFindById<SuggestionData>[Methods]>
+): Promise<ReturnType<ImplementationFindById<SuggestionData>[Methods]>> =>
   execInstanceMethod<
-    SuggestionDataType,
-    ImplementationFindById<SuggestionDataType>,
+    SuggestionData,
+    ImplementationFindById<SuggestionData>,
     Methods
   >(el, method, ...args);
 

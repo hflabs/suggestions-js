@@ -3,32 +3,42 @@ import ImplementationBase, {
 } from "./ImplementationBase";
 import { defaultOptions } from "../../defaultOption";
 import Input from "../Input";
-import Api, { ApiResponseSuggestions } from "../Api";
-import { Suggestion, Suggestions } from "../../types";
+import Api from "../Api";
+import { Suggestion } from "../../types";
 import sinon, { SinonFakeServer } from "sinon";
-import { as } from "../../utils/as";
 import { noop } from "../../utils/noop";
 import { ERROR_DISPOSED } from "../../errors";
+import { respondWithSuggestions } from "../../../testUtils/withFakeServer";
+import { createSuggestions } from "../../../testUtils/createSuggestions";
 
+/**
+ * As ImplementationBase is just an abstract class providing some features for its descendants,
+ * check these features themselves, not the whole behaviour.
+ */
 describe("class ImplementationBase", () => {
-  // Define class over abstract, make protected methods public
-  class ImplementationTest<D = unknown> extends ImplementationBase<D> {
+  // Define concrete class over an abstract class to be able to instantiate it.
+  // Also make protected methods public
+  class ImplementationMock<SuggestionData = unknown> extends ImplementationBase<
+    SuggestionData
+  > {
     public isQueryRequestable(query: string): boolean {
       return super.isQueryRequestable(query);
     }
 
-    public setCurrentSuggestion(suggestion: Suggestion<D> | null): void {
+    public setCurrentSuggestion(
+      suggestion: Suggestion<SuggestionData> | null
+    ): void {
       return super.setCurrentSuggestion(suggestion);
     }
 
-    public getCurrentSuggestion(): Suggestion<D> | null {
+    public getCurrentSuggestion(): Suggestion<SuggestionData> | null {
       return super.getCurrentSuggestion();
     }
 
     public fetchSuggestion(
       query: string,
       params?: Record<string, unknown>
-    ): Promise<Suggestion<D> | null> {
+    ): Promise<Suggestion<SuggestionData> | null> {
       return super.fetchSuggestion(query, params);
     }
 
@@ -47,10 +57,15 @@ describe("class ImplementationBase", () => {
     document.body.removeChild(el);
   });
 
-  const withInstance = async (
+  /**
+   * A helper to create and dispose instance of ImplementationMock.
+   * @param customOptions
+   * @param fn
+   */
+  const withInstance = (
     customOptions: Partial<ImplementationBaseOptions<unknown>> | null,
-    fn: (instance: ImplementationTest) => void
-  ): Promise<void> => {
+    fn: (instance: ImplementationMock) => Promise<void> | void
+  ): Promise<void> | void => {
     const options = {
       ...defaultOptions,
       type: "some-type",
@@ -60,45 +75,39 @@ describe("class ImplementationBase", () => {
     };
     const api = new Api(options);
     const input = new Input(el, options);
-    const instance = new ImplementationTest(el, {
+    const instance = new ImplementationMock(el, {
       ...options,
       api,
       input,
     });
 
-    await fn(instance);
+    const cleanup = () => instance.dispose();
+    const result = fn(instance);
 
-    instance.dispose();
+    if (result instanceof Promise) return result.finally(cleanup);
+
+    cleanup();
+    return result;
   };
 
   describe("isQueryRequestable()", () => {
-    it("should return true if no minLength set", async () => {
-      await withInstance(
-        {
-          minLength: undefined,
-        },
-        (instance) => {
-          expect(instance.isQueryRequestable("")).toBe(true);
-          expect(instance.isQueryRequestable("some long phrase")).toBe(true);
-        }
-      );
+    it("should return true if no minLength set", () => {
+      withInstance({ minLength: undefined }, (instance) => {
+        expect(instance.isQueryRequestable("")).toBe(true);
+        expect(instance.isQueryRequestable("some longer phrase")).toBe(true);
+      });
     });
 
-    it("should return true if query is not less than minLength", async () => {
-      await withInstance(
-        {
-          minLength: 3,
-        },
-        (instance) => {
-          expect(instance.isQueryRequestable("")).toBe(false);
-          expect(instance.isQueryRequestable("123")).toBe(true);
-          expect(instance.isQueryRequestable("some long phrase")).toBe(true);
-        }
-      );
+    it("should return true if query is not less than minLength", () => {
+      withInstance({ minLength: 3 }, (instance) => {
+        expect(instance.isQueryRequestable("")).toBe(false);
+        expect(instance.isQueryRequestable("123")).toBe(true);
+        expect(instance.isQueryRequestable("some long phrase")).toBe(true);
+      });
     });
 
-    it("should use custom isQueryRequestable() from the options", async () => {
-      await withInstance(
+    it("should use custom isQueryRequestable() from the options", () => {
+      withInstance(
         {
           isQueryRequestable: (query: string) => query.includes(" "),
           minLength: 3,
@@ -114,7 +123,7 @@ describe("class ImplementationBase", () => {
   });
 
   describe("setCurrentSuggestion()", () => {
-    it("should trigger onSelect when passed a suggestion", async () => {
+    it("should trigger onSelect when passed a suggestion", () => {
       const onSelect = jest.fn();
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
@@ -122,20 +131,15 @@ describe("class ImplementationBase", () => {
         data: null,
       };
 
-      await withInstance(
-        {
-          onSelect,
-        },
-        (instance) => {
-          instance.setCurrentSuggestion(suggestion);
-        }
-      );
+      withInstance({ onSelect }, (instance) => {
+        instance.setCurrentSuggestion(suggestion);
+      });
 
       expect(onSelect).toHaveBeenCalledTimes(1);
       expect(onSelect).toHaveBeenCalledWith(suggestion, true, el);
     });
 
-    it("should not trigger onSelect when passed a suggestion same to already selected", async () => {
+    it("should not trigger onSelect when passed a suggestion same to already selected", () => {
       const onSelect = jest.fn();
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
@@ -143,7 +147,7 @@ describe("class ImplementationBase", () => {
         data: null,
       };
 
-      await withInstance(
+      withInstance(
         {
           onSelect,
         },
@@ -157,41 +161,36 @@ describe("class ImplementationBase", () => {
       expect(onSelect).toHaveBeenCalledTimes(1);
     });
 
-    it("should not fail if onSelect is not provided", async () => {
+    it("should not fail if onSelect is not provided", () => {
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
         unrestricted_value: "suggestion unrestricted_value",
         data: null,
       };
 
-      await withInstance(null, (instance) => {
+      withInstance(null, (instance) => {
         expect(() => instance.setCurrentSuggestion(suggestion)).not.toThrow();
       });
     });
 
-    it("should trigger onSelectNothing when passed null and nothing has been selected before", async () => {
+    it("should trigger onSelectNothing when passed null and nothing has been selected before", () => {
       const onSelectNothing = jest.fn();
 
-      await withInstance(
-        {
-          onSelectNothing,
-        },
-        (instance) => {
-          instance.setCurrentSuggestion(null);
-        }
-      );
+      withInstance({ onSelectNothing }, (instance) => {
+        instance.setCurrentSuggestion(null);
+      });
 
       expect(onSelectNothing).toHaveBeenCalledTimes(1);
       expect(onSelectNothing).toHaveBeenCalledWith(el.value, el);
     });
 
-    it("should not fail if onSelectNothing is not provided", async () => {
-      await withInstance(null, (instance) => {
+    it("should not fail if onSelectNothing is not provided", () => {
+      withInstance(null, (instance) => {
         expect(() => instance.setCurrentSuggestion(null)).not.toThrow();
       });
     });
 
-    it("should trigger onInvalidateSelection when passed null and there was a selected suggestion", async () => {
+    it("should trigger onInvalidateSelection when passed null and there was a selected suggestion", () => {
       const onInvalidateSelection = jest.fn();
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
@@ -199,7 +198,7 @@ describe("class ImplementationBase", () => {
         data: null,
       };
 
-      await withInstance(
+      withInstance(
         {
           onInvalidateSelection,
         },
@@ -214,14 +213,14 @@ describe("class ImplementationBase", () => {
       expect(onInvalidateSelection).toHaveBeenCalledWith(suggestion, el);
     });
 
-    it("should not fail if onInvalidateSelection is not provided", async () => {
+    it("should not fail if onInvalidateSelection is not provided", () => {
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
         unrestricted_value: "suggestion unrestricted_value",
         data: null,
       };
 
-      await withInstance(null, (instance) => {
+      withInstance(null, (instance) => {
         instance.setCurrentSuggestion(suggestion);
         expect(() => instance.setCurrentSuggestion(null)).not.toThrow();
       });
@@ -229,14 +228,14 @@ describe("class ImplementationBase", () => {
   });
 
   describe("getCurrentSuggestion()", () => {
-    it("should return a previously set suggestion", async () => {
+    it("should return a previously set suggestion", () => {
       const suggestion: Suggestion<null> = {
         value: "suggestion value",
         unrestricted_value: "suggestion unrestricted_value",
         data: null,
       };
 
-      await withInstance(null, (instance) => {
+      withInstance(null, (instance) => {
         expect(instance.getCurrentSuggestion()).toBe(null);
         instance.setCurrentSuggestion(suggestion);
         expect(instance.getCurrentSuggestion()).toBe(suggestion);
@@ -270,17 +269,7 @@ describe("class ImplementationBase", () => {
       await withInstance(null, async (instance) => {
         const call = instance.fetchSuggestion("query");
 
-        server.respondWith([
-          200,
-          { "Content-type": "application/json" },
-          JSON.stringify(
-            as<ApiResponseSuggestions<unknown>>({
-              suggestions: [],
-            })
-          ),
-        ]);
-        server.respond();
-
+        await respondWithSuggestions(server, []);
         await expect(call).resolves.toBe(null);
       });
     });
@@ -288,28 +277,9 @@ describe("class ImplementationBase", () => {
     it("should resolve to the first suggestion from the list", async () => {
       await withInstance(null, async (instance) => {
         const call = instance.fetchSuggestion("query");
-        const suggestions: Suggestions<null> = [
-          {
-            value: "suggestion 1 value",
-            unrestricted_value: "suggestion 1 unrestricted_value",
-            data: null,
-          },
-          {
-            value: "suggestion 2 value",
-            unrestricted_value: "suggestion 2 unrestricted_value",
-            data: null,
-          },
-        ];
+        const suggestions = createSuggestions(3);
 
-        server.respondWith([
-          200,
-          { "Content-type": "application/json" },
-          JSON.stringify(
-            as<ApiResponseSuggestions<unknown>>({ suggestions })
-          ),
-        ]);
-        server.respond();
-
+        await respondWithSuggestions(server, suggestions);
         await expect(call).resolves.toEqual(suggestions[0]);
       });
     });
@@ -334,8 +304,8 @@ describe("class ImplementationBase", () => {
         el.value = inputValueBeforeTest;
       });
 
-      it("should not send a request", async () => {
-        await withInstance({ minLength }, () => {
+      it("should not send a request", () => {
+        withInstance({ minLength }, () => {
           expect(server.requests).toHaveLength(0);
         });
       });
@@ -361,8 +331,8 @@ describe("class ImplementationBase", () => {
         el.value = inputValueBeforeTest;
       });
 
-      it("should send a request", async () => {
-        await withInstance(null, (instance) => {
+      it("should send a request", () => {
+        withInstance(null, (instance) => {
           const call = instance.fixData();
 
           expect(server.requests).toHaveLength(1);
@@ -374,7 +344,7 @@ describe("class ImplementationBase", () => {
       it("should reject if instance disposed before server responds", async () => {
         let call: Promise<Suggestion<unknown> | null> | undefined;
 
-        await withInstance(null, async (instance) => {
+        withInstance(null, (instance) => {
           call = instance.fixData();
         });
 
@@ -383,17 +353,7 @@ describe("class ImplementationBase", () => {
 
       describe("if no suggestion found", () => {
         beforeEach(() => {
-          server.respondWith((xhr) =>
-            xhr.respond(
-              200,
-              { "Content-type": "application/json" },
-              JSON.stringify(
-                as<ApiResponseSuggestions<unknown>>({
-                  suggestions: [],
-                })
-              )
-            )
-          );
+          respondWithSuggestions(server, []);
           server.autoRespond = true;
           server.autoRespondAfter = 0;
         });
@@ -428,24 +388,10 @@ describe("class ImplementationBase", () => {
       });
 
       describe("if suggestion found", () => {
-        const suggestion: Suggestion<null> = {
-          value: "suggested value",
-          unrestricted_value: "unrestricted_value value",
-          data: null,
-        };
+        const suggestion = createSuggestions(1)[0];
 
         beforeEach(() => {
-          server.respondWith((xhr) =>
-            xhr.respond(
-              200,
-              { "Content-type": "application/json" },
-              JSON.stringify(
-                as<ApiResponseSuggestions<unknown>>({
-                  suggestions: [suggestion],
-                })
-              )
-            )
-          );
+          respondWithSuggestions(server, [suggestion]);
           server.autoRespond = true;
         });
 
@@ -465,14 +411,9 @@ describe("class ImplementationBase", () => {
         it("should trigger onSelect", async () => {
           const onSelect = jest.fn();
 
-          await withInstance(
-            {
-              onSelect,
-            },
-            async (instance) => {
-              await instance.fixData();
-            }
-          );
+          await withInstance({ onSelect }, async (instance) => {
+            await instance.fixData();
+          });
 
           expect(onSelect).toHaveBeenCalledWith(suggestion, true, el);
         });
@@ -491,22 +432,21 @@ describe("class ImplementationBase", () => {
       server.restore();
     });
 
-    it("should trigger onSearchStart", async () => {
+    it("should trigger onSearchStart", () => {
       const onSearchStart = jest.fn();
-      await withInstance({ onSearchStart }, async (instance) => {
+
+      withInstance({ onSearchStart }, (instance) => {
         const call = instance.fetchSuggestionTriggeringSearchCallbacks("some");
 
         expect(onSearchStart).toHaveBeenCalledWith("some", el);
-
-        server.respond();
-        await call.catch(noop);
+        call.catch(noop);
       });
     });
 
-    it("should trigger onSearchStart and change query", async () => {
-      await withInstance(
+    it("should trigger onSearchStart and change query", () => {
+      withInstance(
         { onSearchStart: (query: string) => `adjusted ${query}` },
-        async (instance) => {
+        (instance) => {
           const call = instance.fetchSuggestionTriggeringSearchCallbacks(
             "something"
           );
@@ -514,22 +454,20 @@ describe("class ImplementationBase", () => {
           expect(JSON.parse(server.requests[0].requestBody)).toMatchObject({
             query: "adjusted something",
           });
-
-          server.respond();
-          await call.catch(noop);
+          call.catch(noop);
         }
       );
     });
 
-    it("should proceed with original query if onSearchStart returns not a string", async () => {
-      await withInstance(
+    it("should proceed with original query if onSearchStart returns not a string", () => {
+      withInstance(
         {
           // Return not a string
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-expect-error
           onSearchStart: (query: string) => query.length,
         },
-        async (instance) => {
+        (instance) => {
           const call = instance.fetchSuggestionTriggeringSearchCallbacks(
             "something"
           );
@@ -537,9 +475,7 @@ describe("class ImplementationBase", () => {
           expect(JSON.parse(server.requests[0].requestBody)).toMatchObject({
             query: "something",
           });
-
-          server.respond();
-          await call.catch(noop);
+          call.catch(noop);
         }
       );
     });
@@ -564,20 +500,9 @@ describe("class ImplementationBase", () => {
     it("should trigger onSearchComplete", async () => {
       const onSearchComplete = jest.fn();
       await withInstance({ onSearchComplete }, async (instance) => {
-        const call = instance.fetchSuggestionTriggeringSearchCallbacks("some");
+        instance.fetchSuggestionTriggeringSearchCallbacks("some");
 
-        server.respondWith([
-          200,
-          { "Content-type": "application/json" },
-          JSON.stringify(
-            as<ApiResponseSuggestions<null>>({
-              suggestions: [],
-            })
-          ),
-        ]);
-        server.respond();
-
-        await call;
+        await respondWithSuggestions(server, []);
 
         expect(onSearchComplete).toHaveBeenCalledWith([], "some", el);
       });

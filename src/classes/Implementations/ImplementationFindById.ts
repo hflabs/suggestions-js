@@ -2,17 +2,19 @@ import { EVENT_INPUT_CHANGE } from "../Input";
 import ImplementationBase, {
   ImplementationBaseOptions,
 } from "./ImplementationBase";
-import { noop } from "../../utils/noop";
 import { queuedPromiseFactory } from "../../utils/queuedPromiseFactory";
+import { noop } from "../../utils/noop";
 
-export default class ImplementationFindById<D> extends ImplementationBase<D> {
+export default class ImplementationFindById<
+  SuggestionData
+> extends ImplementationBase<SuggestionData> {
   private fetchSuggestionWithCallbacks = this.triggeringSearchCallbacks(
     queuedPromiseFactory(this.fetchSuggestion.bind(this))
   );
 
   constructor(
     protected el: HTMLInputElement,
-    protected options: ImplementationBaseOptions<D>
+    protected options: ImplementationBaseOptions<SuggestionData>
   ) {
     super(el, options);
     this.listenToInput();

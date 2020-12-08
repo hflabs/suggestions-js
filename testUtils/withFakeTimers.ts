@@ -1,12 +1,14 @@
-export const withFakeTimers = async (
-  ...fns: (() => Promise<void> | void)[]
-): Promise<void> => {
+export const withFakeTimers = (
+  fn: () => Promise<void> | void
+): Promise<void> | void => {
   jest.useFakeTimers();
+  const cleanup = () => {
+    jest.useRealTimers();
+  };
+  const result = fn();
 
-  for (let i = 0; i < fns.length; i++) {
-    if (i > 0) jest.runAllTimers();
-    await fns[i]();
-  }
+  if (result instanceof Promise) return result.finally(cleanup);
 
-  jest.useRealTimers();
+  cleanup();
+  return result;
 };

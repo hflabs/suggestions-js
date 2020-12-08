@@ -1,5 +1,5 @@
-interface Debounced<A extends unknown[]> {
-  (...args: A): void;
+interface Debounced<Args extends unknown[]> {
+  (...args: Args): void;
   cancel: () => void;
 }
 
@@ -12,14 +12,14 @@ interface Debounced<A extends unknown[]> {
  * @param {Function} fn
  * @param {number} wait
  */
-export const debounce = <A extends unknown[]>(
-  fn: (...args: A) => unknown,
+export const debounce = <Args extends unknown[]>(
+  fn: (...args: Args) => unknown,
   wait: number
-): Debounced<A> => {
+): Debounced<Args> => {
   let timer: number | null;
-  let delayedArgs: A;
+  let delayedArgs: Args;
 
-  const debounced = (...args: A) => {
+  const debounced = (...args: Args) => {
     delayedArgs = args;
     if (timer) clearTimeout(timer);
 

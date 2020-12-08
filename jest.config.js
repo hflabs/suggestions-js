@@ -4,7 +4,7 @@ module.exports = {
   preset: "ts-jest",
   collectCoverage: true,
   collectCoverageFrom: ["src/**/*.ts"],
-  coverageReporters: ["json-summary"],
+  coverageReporters: ["json-summary", "text"],
   globals: {
     DEFINED_VERSION: packageInfo.version,
   },
