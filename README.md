@@ -36,7 +36,5 @@ dispose(addressInput);
 
 ### Files in this package
 
-- lib/findById.js -- basic search without ui
-- lib/findById.ie.js -- same, but built with polyfills
-- lib/suggest.js (default) -- search with auto-complete ui
-- lib/suggest.ie.js -- same, but built with polyfills
+- src/entrypoints/findById.js -- basic search without ui
+- src/entrypoints/suggest.js (default) -- search with auto-complete ui
