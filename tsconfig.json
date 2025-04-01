@@ -1,0 +1,42 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@provider/*": [
+                "src/lib/Provider/*"
+            ],
+            "@provider_strategy/*": [
+                "src/lib/Provider/includes/strategy/*"
+            ],
+            "@provider_api/*": [
+                "src/lib/Provider/includes/api/*"
+            ],
+            "@provider_suggestions/*": [
+                "src/lib/Provider/includes/suggestions/*"
+            ],
+            "@view/*": [
+                "src/lib/View/*"
+            ],
+            "@tests/*": [
+                "tests/*"
+            ]
+        },
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "strict": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "resolveJsonModule": true,
+        "lib": [
+            "dom",
+            "esnext"
+        ],
+        "removeComments": true
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

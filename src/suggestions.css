@@ -1,0 +1,187 @@
+.suggestions-nowrap {
+    white-space: nowrap;
+}
+
+/**
+ * Основной INPUT
+ */
+.suggestions-input {
+    -ms-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.suggestions-input::-ms-clear {
+    display: none;
+}
+
+.suggestions-wrapper {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+    -webkit-text-size-adjust: 100%;
+}
+
+/**
+ * Выпадающий блок с найденными подсказками
+ */
+.suggestions-suggestions {
+    background: #fff;
+    border: 1px solid #999;
+    -ms-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    cursor: default;
+    left: 0;
+    min-width: 100%;
+    position: absolute;
+    z-index: 9999;
+    -webkit-text-size-adjust: 100%;
+}
+
+.suggestions-wrapper:not(.suggestions-wrapper--mobile) .suggestions-suggestion_hidden-desktop {
+    display: none;
+}
+
+.suggestions-wrapper--mobile .suggestions-suggestion_hidden-mobile {
+    display: none;
+}
+
+.suggestions-suggestions strong {
+    font-weight: normal;
+    color: #3399ff;
+}
+
+/**
+ * Контейнер для одной подсказки
+ */
+.suggestions-suggestion {
+    padding: 4px 4px;
+    overflow: hidden;
+}
+
+.suggestions-suggestion:hover {
+    background: #f7f7f7;
+}
+
+/**
+ * Выбранная (активная) подсказка
+ */
+.suggestions-selected {
+    background: #f0f0f0;
+}
+
+.suggestions-selected:hover {
+    background: #f0f0f0;
+}
+
+/**
+ * Информационный блок в верхней части выпадашки с подсказками
+ */
+.suggestions-hint {
+    padding: 4px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    color: #777;
+    font-size: 85%;
+    line-height: 20px;
+    text-overflow: ellipsis;
+}
+
+.suggestions-wrapper:not(.suggestions-wrapper--mobile)
+    .suggestions-suggestions--with-promo
+    .suggestions-hint {
+    max-width: calc(100% - 80px);
+    padding-right: 0;
+}
+
+/**
+ * Дополнительный текст в подсказке, который идет второй строкой
+ */
+.suggestions-subtext {
+    color: #777;
+}
+
+/**
+ * Размещает дополнительный текст в одну строку с основным текстом подсказки
+ */
+.suggestions-subtext_inline {
+    display: inline-block;
+    min-width: 6em;
+    vertical-align: bottom;
+    margin: 0 0.5em 0 0;
+}
+
+/**
+ * Разделитель нескольких дополнительных текстов
+ */
+.suggestions-subtext-delimiter {
+    display: inline-block;
+    width: 2px;
+}
+
+/**
+ * Выделяет подсказку
+ */
+.suggestions-subtext_label {
+    margin: 0 0 0 0.25em;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    padding: 0 3px;
+    background: #f5f5f5;
+    font-size: 85%;
+}
+
+.suggestions-value[data-suggestion-status="LIQUIDATED"] {
+    position: relative;
+}
+
+.suggestions-value[data-suggestion-status="LIQUIDATED"]:after {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 1px solid rgba(0, 0, 0, 0.4);
+    content: "";
+}
+
+/**
+ * Промо-блок
+ */
+.suggestions-promo {
+    font-size: 85%;
+    color: #777;
+    padding: 4px;
+    text-align: center;
+}
+
+.suggestions-promo a {
+    color: #777;
+    display: block;
+    filter: grayscale(100%);
+    line-height: 20px;
+    text-decoration: none;
+}
+
+.suggestions-promo a:hover {
+    filter: grayscale(0);
+}
+
+.suggestions-promo svg {
+    height: 20px;
+    vertical-align: bottom;
+}
+
+.suggestions-wrapper:not(.suggestions-wrapper--mobile)
+    .suggestions-suggestions:not(.suggestions-suggestions--nohint)
+    .suggestions-promo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    text-align: left;
+}

@@ -1,0 +1,25 @@
+.input-container {
+    position: relative;
+}
+
+.suggestions-wrapper {
+    position: absolute;
+    top: 100%;
+    left: 0;
+
+    width: 100%;
+
+    display: grid;
+    grid-template-rows: 0fr;
+
+    transition: grid-template-rows 200ms linear;
+}
+
+.suggestions-wrapper--active {
+    grid-template-rows: 1fr;
+}
+
+.suggestions-suggestions {
+    overflow: hidden;
+    position: relative;
+}

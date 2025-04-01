@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="../../../dist/suggestions.min.js"></script>
+    <script src="../../token.js" defer></script>
+    <script src="./index.js" defer></script>
+    <link rel="stylesheet" href="../../../dist/suggestions.min.css">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <section class="container">
+        <h3>
+          <a class="logo" href="https://dadata.ru/suggestions/usage/address/" target="_blank">DaData.ru</a> •
+          Разложить адрес по полям
+        </h3>
+        <div class="row">
+          <input id="address" name="address" type="text" />
+        </div>
+        <div class="row">
+          <div class="label">
+              <label for="postal_code">Индекс</label>
+          </div>
+          <div class="value">
+              <input type="text" id="postal_code">
+          </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="region">Регион</label>
+            </div>
+            <div class="value">
+                <input type="text" id="region">
+            </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="city">Город</label>
+            </div>
+            <div class="value ">
+                <input type="text" id="city">
+            </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="street">Улица</label>
+            </div>
+            <div class="value">
+                <input type="text" id="street">
+            </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="house">Дом</label>
+            </div>
+            <div class="value">
+                <input type="text" id="house">
+            </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="flat">Квартира</label>
+            </div>
+            <div class="value">
+                <input type="text" id="flat">
+            </div>
+        </div>
+        <div class="row">
+            <div class="label">
+                <label for="flat">Геокоорд.</label>
+            </div>
+            <div class="value">
+              <span id="geo"></span>
+            </div>
+        </div>
+      </section>
+</body>
+</html>

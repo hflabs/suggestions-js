@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <section class="container">
+            <h1>Ограничить сектор поиска по банкам</h1>
+            <p><span id="label">Без ограничений</span>:</p>
+            <input id="bank" name="bank" type="text" />
+            <p>Выберите ограничение поиска:</p>
+            <ul id="switcher">
+                <li><a href="#none" data-switch="none">Без ограничений</a></li>
+                <li><a href="#bank" data-switch="bank">Поиск по головным банкам</a></li>
+                <li><a href="#bank_branch" data-switch="bank_branch">Только филиалы банков</a></li>
+                <li><a href="#nko" data-switch="nko">Только НКО</a></li>
+                <li><a href="#nko_branch" data-switch="nko_branch">Только филиалы НКО</a></li>
+            </ul>
+        </section>
+    </body>
+</html>

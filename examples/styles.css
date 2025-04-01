@@ -1,0 +1,18 @@
+input,
+body {
+    font-family: sans-serif;
+}
+
+.container {
+    max-width: 600px;
+    padding: 0 16px;
+}
+
+.container > div {
+    margin-bottom: 0.5rem;
+}
+
+input {
+    font-size: 16px;
+    padding: 4px;
+}

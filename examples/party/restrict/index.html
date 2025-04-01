@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <section class="container">
+            <h1>Ограничить сектор поиска по организациям</h1>
+            <p><span id="label">Без ограничений</span>:</p>
+            <input id="party" name="party" type="text" />
+            <p>Выберите ограничение поиска:</p>
+            <ul id="switcher">
+                <li><a href="#none" data-switch="none">Без ограничений</a></li>
+                <li><a href="#area" data-switch="area">Поиск по Москве</a></li>
+                <li><a href="#type_legal" data-switch="type_legal">Только компании</a></li>
+                <li><a href="#type_ip" data-switch="type_ip">Только ИП</a></li>
+                <li><a href="#status_actual" data-switch="status_actual">Только действующие</a></li>
+                <li>
+                    <a href="#status_liquidated" data-switch="status_liquidated">
+                        Только ликвидированные
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </body>
+</html>

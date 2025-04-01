@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+    </head>
+    <body>
+        <section class="container">
+            <h3>Гранулярные подсказки ФИО</h3>
+            <p>Фамилия, имя и отчество подсказываются по отдельности</p>
+            <input type="text" id="surname" placeholder="Фамилия" autofocus required />
+            <br />
+            <input type="text" id="name" placeholder="Имя" required />
+            <br />
+            <input type="text" id="patronymic" placeholder="Отчество" />
+            <p>пол: <span id="gender"></span></p>
+        </section>
+    </body>
+</html>

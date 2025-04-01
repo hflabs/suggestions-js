@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../../dist/suggestions.min.js"></script>
+        <script src="../../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../../styles.css" />
+    </head>
+    <body>
+        <section class="container">
+            <h1>Гранулярные подсказки по адресу с автозаполнением города</h1>
+            <label for="region">Регион / район:</label>
+            <input id="region" name="region" type="text" />
+            <br /><br />
+            <label for="city">Город / населенный пункт:</label>
+            <input id="city" name="city" type="text" />
+            <br /><br />
+            <label for="street">Улица и дом:</label>
+            <input id="street" name="street" type="text" />
+            <br /><br />
+            <label for="flat">Квартира:</label><br />
+            <input id="flat" name="flat" type="text" maxlength="6" />
+            <br /><br />
+            <label for="postalcode">Индекс:</label><br />
+            <input id="postalcode" name="postalcode" type="text" maxlength="6" />
+        </section>
+    </body>
+</html>

@@ -1,0 +1,43 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 20px;
+    padding: 0.25rem 1.5rem;
+}
+
+input {
+    font-size: 1.25rem;
+    padding: 0.5rem;
+}
+
+p {
+    font-size: 1.25rem;
+}
+
+pre {
+    font-size: 1rem;
+}
+code {
+    font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono",
+        monospace;
+    font-size: 1rem;
+}
+
+a.logo {
+    color: #f43e3e;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(244, 62, 62, 1);
+}
+a.logo:hover {
+    border-bottom: none;
+}
+
+#switcher a {
+    text-decoration: none;
+    border-bottom: 1px dotted blue;
+}
+#switcher a:hover {
+    border-bottom: none;
+}
+#switcher li {
+    line-height: 1.5;
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <section>
+            <h3>
+                <a class="logo" href="https://dadata.ru/suggestions/usage/party/" target="_blank">
+                    DaData.ru
+                </a>
+                • Подсказки по организациям
+            </h3>
+            <input
+                id="party"
+                name="party"
+                type="text"
+                placeholder="Введите название, ИНН, ОГРН или адрес организации"
+            />
+        </section>
+
+        <section class="result">
+            <p id="type"></p>
+            <div class="row">
+                <label>Краткое наименование</label>
+                <input id="name_short" />
+            </div>
+            <div class="row">
+                <label>Полное наименование</label>
+                <input id="name_full" />
+            </div>
+            <div class="row">
+                <label>ИНН / КПП</label>
+                <input id="inn_kpp" />
+            </div>
+            <div class="row">
+                <label>Адрес</label>
+                <textarea id="address"></textarea>
+            </div>
+        </section>
+    </body>
+</html>

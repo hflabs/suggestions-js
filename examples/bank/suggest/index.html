@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <section>
+            <h3>
+                <a class="logo" href="https://dadata.ru/suggestions/usage/party/" target="_blank">
+                    DaData.ru
+                </a>
+                • Подсказки по банкам
+            </h3>
+            <input
+                id="bank"
+                name="bank"
+                type="text"
+                placeholder="Введите название, БИК или SWIFT"
+            />
+        </section>
+
+        <section class="result">
+            <div class="row">
+                <label>Наименование</label>
+                <input id="name_payment" />
+            </div>
+            <div class="row">
+                <label>БИК</label>
+                <input id="bic" />
+            </div>
+            <div class="row">
+                <label>SWIFT</label>
+                <input id="swift" />
+            </div>
+            <div class="row">
+                <label>Корр. счёт</label>
+                <input id="correspondent_account" />
+            </div>
+            <div class="row">
+                <label>Адрес</label>
+                <input id="address" />
+            </div>
+        </section>
+    </body>
+</html>
