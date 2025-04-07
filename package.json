@@ -11,10 +11,17 @@
         "name": "HFLabs",
         "url": "https://hflabs.ru/"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hflabs/suggestions-js.git"
+    },
     "license": "MIT",
     "scripts": {
         "build": "vite build",
-        "test": "npx playwright install && vitest run"
+        "test": "npx playwright install --with-deps chromium && vitest run",
+        "lint": "npx eslint .",
+        "typecheck": "npx tsc --noEmit",
+        "version:up": "version=$(bash version.sh) && npm version \"$version\""
     },
     "exports": {
         ".": {
