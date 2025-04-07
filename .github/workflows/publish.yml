@@ -10,7 +10,7 @@ permissions:
 
 jobs:
     publish:
-        if: github.repository == 'hflabs/suggestions-js' && github.ref == 'refs/heads/main'
+        if: github.repository == 'hflabs/suggestions-js'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
