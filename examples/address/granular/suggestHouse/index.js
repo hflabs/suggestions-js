@@ -39,5 +39,5 @@ const streetSuggs = createSuggestions(
 
 function suggestHouse(suggestion) {
     if (suggestion.data.house) return;
-    streetSuggs.update();
+    streetSuggs.updateSuggestions();
 }

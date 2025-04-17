@@ -760,117 +760,117 @@ suggestions.getOptions<PartySuggestion>(); // Options<PartySuggestion>
 
 ### Адреса
 
-[Подсказки по адресу](https://codepen.io/dadata/pen/WNxePK?editors=1010)<br>
-[Разложить адрес по полям](https://codepen.io/dadata/pen/vYRwEa?editors=1010)<br>
-[Муниципальное деление](https://codepen.io/dadata/pen/LYQMzpW?editors=1010)
+[Подсказки по адресу](https://codepen.io/dadata/pen/QwwLJoa?editors=1010)<br>
+[Разложить адрес по полям](https://codepen.io/dadata/pen/ByyBMRE?editors=1010)<br>
+[Муниципальное деление](https://codepen.io/dadata/pen/qEEWgXp?editors=1010)
 
 Ограничение области поиска:
 
-- [Ограничить сектор поиска по адресу](https://codepen.io/dadata/pen/mdPQzz?editors=1010)
-- [Адреса внутри окружности на карте](https://codepen.io/dadata/pen/XWXMwNv?editors=1010)
-- [Только города](https://codepen.io/dadata/pen/dyWpNM?editors=1010)
-- [Иностранные города](https://codepen.io/dadata/pen/mGgELm?editors=1010)
-- [Без земельных участков](https://codepen.io/dadata/pen/gOeXBvr?editors=1010)
-- [Без станций метро](https://codepen.io/dadata/pen/eYZybyW?editors=1010)
+- [Ограничить сектор поиска по адресу](https://codepen.io/dadata/pen/PwwYVOL?editors=1010)
+- [Адреса внутри окружности на карте](https://codepen.io/dadata/pen/PwwYVQg?editors=1010)
+- [Только города](https://codepen.io/dadata/pen/wBBwNXw?editors=1010)
+- [Иностранные города](https://codepen.io/dadata/pen/MYYWKMg?editors=1010)
+- [Без земельных участков](https://codepen.io/dadata/pen/azzbdeZ?editors=1010)
+- [Без станций метро](https://codepen.io/dadata/pen/KwwKVOL?editors=1010)
 
 Подсказки по отдельным полям адреса (гранулярные подсказки):
 
-- [Регион, город, улица, дом](https://codepen.io/dadata/pen/YzOwWK?editors=1010):
-- [Адрес до н/п одной строкой + улица и дом отдельно](https://codepen.io/dadata/pen/NvNENM?editors=1010)
-- [Страна + остальной адрес отдельно](https://codepen.io/dadata/pen/bGbeEGZ?editors=1010)
-- [Все поля адреса](https://codepen.io/dadata/pen/MYNQBm?editors=1010):
+- [Регион, город, улица, дом](https://codepen.io/dadata/pen/PwwoNNy?editors=1010):
+- [Адрес до н/п одной строкой + улица и дом отдельно](https://codepen.io/dadata/pen/YPPzqpa?editors=1010)
+- [Страна + остальной адрес отдельно](https://codepen.io/dadata/pen/XJJWdRN?editors=1010)
+- [Все поля адреса](https://codepen.io/dadata/pen/EaaxKvW?editors=1010):
 
 Форматирование:
 
-- [Город и н/п без типов](https://codepen.io/dadata/pen/VLJxKq?editors=1010)
-- [Адрес в формате Почты России](https://codepen.io/dadata/pen/vGeOKO?editors=1010)
-- [Полные типы вместо сокращенных](https://codepen.io/dadata/pen/qgNapr?editors=1010)
-- [Точки после сокращений](https://codepen.io/dadata/pen/KqMQgO?editors=1010)
+- [Город и н/п без типов](https://codepen.io/dadata/pen/QwwWNJj?editors=1010)
+- [Адрес в формате Почты России](https://codepen.io/dadata/pen/NPPWNVq?editors=1010)
+- [Полные типы вместо сокращенных](https://codepen.io/dadata/pen/qEEBmvo?editors=1010)
+- [Точки после сокращений](https://codepen.io/dadata/pen/azzbwZG?editors=1010)
 
 Почтовый индекс:
 
-- [Подставить индекс после выбора адреса](https://codepen.io/dadata/pen/NNqrrW?editors=1010)
-- [Определить город по индексу](https://codepen.io/dadata/pen/OpRbjK?editors=1010)
-- [Подсказки по индексу](https://codepen.io/dadata/pen/GOabpM?editors=1010)
+- [Подставить индекс после выбора адреса](https://codepen.io/dadata/pen/vEEYZxq?editors=1010)
+- [Определить город по индексу](https://codepen.io/dadata/pen/LEEYjKx?editors=1010)
+- [Подсказки по индексу](https://codepen.io/dadata/pen/WbbNOmE?editors=1010)
 
 Геолокация по IP:
 
-- [Включить и отключить геолокацию](https://codepen.io/dadata/pen/ExpMPv?editors=1010)
-- [Сохранить информацию о геолокации](https://codepen.io/dadata/pen/poZYyy?editors=1010)
+- [Включить и отключить геолокацию](https://codepen.io/dadata/pen/pvvorMm?editors=1010)
+- [Сохранить информацию о геолокации](https://codepen.io/dadata/pen/yyyLzBm?editors=1010)
 
 Карты и доставка:
 
-- [Выбрать адрес на карте](https://codepen.io/dadata/pen/wvadXgQ?editors=1010)
-- [Показать адрес на карте (Яндекс)](https://codepen.io/dadata/pen/aPKREG?editors=1010)
-- [Показать адрес на карте (Google)](https://codepen.io/dadata/pen/zYEJQNw?editors=1010)
-- [Идентификатор города в службах доставки](https://codepen.io/dadata/pen/YmVzNQ?editors=1010)
+- [Выбрать адрес на карте](https://codepen.io/dadata/pen/WbbNZvm?editors=1010)
+- [Показать адрес на карте (Яндекс)](https://codepen.io/dadata/pen/zxxYEpN?editors=1010)
+- [Показать адрес на карте (Google)](https://codepen.io/dadata/pen/WbbNYzR?editors=1010)
+- [Идентификатор города в службах доставки](https://codepen.io/dadata/pen/vEEYQVB?editors=1010)
 
 Международные подсказки:
 
-- [Подсказки на английском языке](https://codepen.io/dadata/pen/jOPXKea?editors=1010)
-- [Подсказки по всем странам](https://codepen.io/dadata/pen/mGgELm?editors=1010)
-- [Подсказки по всем странам (гранулярные)](https://codepen.io/dadata/pen/XWgLYow?editors=1010)
-- [Подсказки по выбранным странам](https://codepen.io/dadata/pen/yLNGEZj?editors=1010)
-- [Города мира](https://codepen.io/dadata/pen/LYRvQjL?editors=1010)
+- [Подсказки на английском языке](https://codepen.io/dadata/pen/dPPyQQB?editors=1010)
+- [Подсказки по всем странам](https://codepen.io/dadata/pen/MYYWKMg?editors=1010)
+- [Подсказки по всем странам (гранулярные)](https://codepen.io/dadata/pen/xbbxmxe?editors=1010)
+- [Подсказки по выбранным странам](https://codepen.io/dadata/pen/NPPWePv?editors=1010)
+- [Города мира](https://codepen.io/dadata/pen/gbbOZaL?editors=1010)
 
 Другие возможности:
 
-- [Адрес по коду ФИАС или КЛАДР](https://codepen.io/dadata/pen/QMdYBW?editors=1010)
-- [Получить код регистрирующей налоговой по адресу](https://codepen.io/dadata/pen/vwJyJL?editors=1010)
-- [Предзаполнение сохраненного адреса (гранулярный)](https://codepen.io/dadata/pen/OPQbmz?editors=1010)
-- [Предзаполнение сохраненного адреса (одной строкой)](https://codepen.io/dadata/pen/QEqPox?editors=1010)
-- [Запретить автоисправление](https://codepen.io/dadata/pen/OPdJpG?editors=1010)
-- [Запретить вводить адрес без дома](https://codepen.io/dadata/pen/EXPQPv?editors=1010)
-- [Проверить заполненность адреса](https://codepen.io/dadata/pen/WNbOapj?editors=1010)
-- [Установка адреса через setSuggestion](https://codepen.io/dadata/pen/RNdPOL?editors=1010)
+- [Адрес по коду ФИАС или КЛАДР](https://codepen.io/dadata/pen/YPPzdQW?editors=1010)
+- [Получить код регистрирующей налоговой по адресу](https://codepen.io/dadata/pen/raaNopb?editors=1010)
+- [Предзаполнение сохраненного адреса (гранулярный)](https://codepen.io/dadata/pen/raaNodg?editors=1010)
+- [Предзаполнение сохраненного адреса (одной строкой)](https://codepen.io/dadata/pen/gbbOZzx?editors=1010)
+- [Запретить автоисправление](https://codepen.io/dadata/pen/yyyLGqZ?editors=1010)
+- [Запретить вводить адрес без дома](https://codepen.io/dadata/pen/NPPWeEB?editors=1010)
+- [Проверить заполненность адреса](https://codepen.io/dadata/pen/yyyLGZw?editors=1010)
+- [Установка адреса через setSuggestion](https://codepen.io/dadata/pen/wBBvROX?editors=1010)
 
 ### Организации
 
-[Подсказки по организациям](https://codepen.io/dadata/pen/QWxOEK?editors=1010)
+[Подсказки по организациям](https://codepen.io/dadata/pen/WbbNLBa?editors=1010)
 
-[Подсказки по ИНН](https://codepen.io/dadata/pen/WvmWGX?editors=1010)<br>
-[Заполнить реквизиты компании по ИНН](https://codepen.io/dadata/pen/WwpBYV?editors=1010)
+[Подсказки по ИНН](https://codepen.io/dadata/pen/qEEBgWa?editors=1010)<br>
+[Заполнить реквизиты компании по ИНН](https://codepen.io/dadata/pen/bNNGzwO?editors=1010)
 
-[Ограничить сектор поиска по организациям](https://codepen.io/dadata/pen/KwPgWq?editors=1010)<br>
-[Подсказки по организациям без филиалов](https://codepen.io/dadata/pen/QGPRmw?editors=1010)<br>
-[Фильтр по ОКВЭД](https://codepen.io/dadata/pen/yLazLbd?editors=1010)
+[Ограничить сектор поиска по организациям](https://codepen.io/dadata/pen/EaaxrZg?editors=1010)<br>
+[Подсказки по организациям без филиалов](https://codepen.io/dadata/pen/PwwoVOx?editors=1010)<br>
+[Фильтр по ОКВЭД](https://codepen.io/dadata/pen/XJJWOEN?editors=1010)
 
-[Запретить автоисправление](https://codepen.io/dadata/pen/gpOzzR?editors=1010)<br>
-[Запретить вводить компанию, если ее нет в ЕГРЮЛ](https://codepen.io/dadata/pen/EmxPdX?editors=1010)<br>
-[Включить и отключить геолокацию](https://codepen.io/dadata/pen/LRywmg?editors=1010)
+[Запретить автоисправление](https://codepen.io/dadata/pen/OPPJdvd?editors=1010)<br>
+[Запретить вводить компанию, если ее нет в ЕГРЮЛ](https://codepen.io/dadata/pen/QwwWYBL?editors=1010)<br>
+[Включить и отключить геолокацию](https://codepen.io/dadata/pen/OPPJdwq?editors=1010)
 
-[Собственное сообщение, если компания не найдена](https://codepen.io/dadata/pen/eqjRdX?editors=1010)
+[Собственное сообщение, если компания не найдена](https://codepen.io/dadata/pen/oggNmPE?editors=1010)
 
 ### Банки
 
-[Подсказки по банкам](https://codepen.io/dadata/pen/jEzVee?editors=1010)<br>
-[Ограничить сектор поиска по банкам](https://codepen.io/dadata/pen/zxWoNX?editors=1010)<br>
-[Отфильтровать банки по городу](https://codepen.io/dadata/pen/dypZPqq?editors=1010)<br>
-[Заполнить реквизиты банка по БИК](https://codepen.io/dadata/pen/JMzymW?editors=1010)
+[Подсказки по банкам](https://codepen.io/dadata/pen/bNNGzOX?editors=1010)<br>
+[Ограничить сектор поиска по банкам](https://codepen.io/dadata/pen/yyyLZwO?editors=1010)<br>
+[Отфильтровать банки по городу](https://codepen.io/dadata/pen/YPPzBgO?editors=1010)<br>
+[Заполнить реквизиты банка по БИК](https://codepen.io/dadata/pen/PwwoVrv?editors=1010)
 
 ### ФИО
 
-[Подсказки по ФИО](https://codepen.io/dadata/pen/PoWBEp?editors=1010)<br>
-[Разложить ФИО по полям](https://codepen.io/dadata/pen/ByVdLM?editors=1010)<br>
-[Гранулярные подсказки ФИО](https://codepen.io/dadata/pen/qBZQwx?editors=1010)
+[Подсказки по ФИО](https://codepen.io/dadata/pen/azzbMoV?editors=1010)<br>
+[Разложить ФИО по полям](https://codepen.io/dadata/pen/EaaxMab?editors=1010)<br>
+[Гранулярные подсказки ФИО](https://codepen.io/dadata/pen/zxxYbGE?editors=1010)
 
 ### Паспорт
 
-[Кем выдан паспорт (только наименование)](https://codepen.io/dadata/pen/jJgEPw?editors=1010)<br>
-[Кем выдан паспорт (код + наименование)](https://codepen.io/dadata/pen/eXwdBP?editors=1010)
+[Кем выдан паспорт (только наименование)](https://codepen.io/dadata/pen/ByyabKa?editors=1010)<br>
+[Кем выдан паспорт (код + наименование)](https://codepen.io/dadata/pen/YPPzgqd?editors=1010)
 
 ### Email
 
-[Подсказки по email](https://codepen.io/dadata/pen/wBwWRv?editors=1010)<br>
-[Подсказывать только домен](https://codepen.io/dadata/pen/raBrje?editors=1010)
+[Подсказки по email](https://codepen.io/dadata/pen/qEEBvNy?editors=1010)<br>
+[Подсказывать только домен](https://codepen.io/dadata/pen/QwwWoKE?editors=1010)
 
 ### Прочее
 
-[Включить или отключить подсказки](httpы://codepen.io/dadata/pen/NqJwEp?editors=1010)<br>
-[Изменить количество подсказок](https://codepen.io/dadata/pen/dyKZyg?editors=1010)<br>
-[Подсказки с 3-го символа](https://codepen.io/dadata/pen/xzrzrz?editors=1010)
+[Включить или отключить подсказки](https://codepen.io/dadata/pen/YPPzgQM?editors=1010)<br>
+[Изменить количество подсказок](https://codepen.io/dadata/pen/raaNRzp?editors=1010)<br>
+[Подсказки с 3-го символа](https://codepen.io/dadata/pen/oggNVGJ?editors=1010)
 
-[Обработчик onSelectNothing](https://codepen.io/dadata/pen/JEZQKg?editors=1010)<br>
-[Сообщение пользователю, если подсказки не работают](https://codepen.io/dadata/pen/VWMVMo?editors=1010)
+[Обработчик onSelectNothing](https://codepen.io/dadata/pen/jEEOJay?editors=1010)<br>
+[Сообщение пользователю, если подсказки не работают](https://codepen.io/dadata/pen/myydopb?editors=1010)
 
-[Мобильная версия подсказок](https://codepen.io/dadata/pen/azojLW?editors=1010)
+[Мобильная версия подсказок](https://codepen.io/dadata/pen/RNNwdxX?editors=1010)
