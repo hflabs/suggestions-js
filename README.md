@@ -753,9 +753,6 @@ suggestions.getOptions<PartySuggestion>(); // Options<PartySuggestion>
 
 ## Примеры использования
 
-> [!WARNING]
-> Раздел актуализируется.
-
 Исходники и демки доступны на платфоме Codepen по ссылкам ниже.
 
 ### Адреса
@@ -775,10 +772,10 @@ suggestions.getOptions<PartySuggestion>(); // Options<PartySuggestion>
 
 Подсказки по отдельным полям адреса (гранулярные подсказки):
 
-- [Регион, город, улица, дом](https://codepen.io/dadata/pen/PwwoNNy?editors=1010):
+- [Регион, город, улица, дом](https://codepen.io/dadata/pen/PwwoNNy?editors=1010)
 - [Адрес до н/п одной строкой + улица и дом отдельно](https://codepen.io/dadata/pen/YPPzqpa?editors=1010)
 - [Страна + остальной адрес отдельно](https://codepen.io/dadata/pen/XJJWdRN?editors=1010)
-- [Все поля адреса](https://codepen.io/dadata/pen/EaaxKvW?editors=1010):
+- [Все поля адреса](https://codepen.io/dadata/pen/EaaxKvW?editors=1010)
 
 Форматирование:
 
