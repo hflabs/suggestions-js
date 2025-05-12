@@ -1,7 +1,7 @@
 {
     "name": "@dadata/suggestions",
     "type": "module",
-    "version": "25.4.1",
+    "version": "25.5.0",
     "description": "DaData.ru Suggestions plugin",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
