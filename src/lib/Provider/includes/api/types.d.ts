@@ -1,6 +1,6 @@
 export interface API_OPTIONS {
     url?: string;
-    headers?: Record<string, string>;
+    headers?: Record<string, string> | (() => Record<string, string>);
     token?: string;
     serviceUrl?: string;
     partner?: string;

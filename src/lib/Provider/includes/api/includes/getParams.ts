@@ -33,8 +33,10 @@ export const getFetchParams = (options: API_OPTIONS, endpoint: Endpoint, slug?: 
                 : `${serviseUrl}/${endpoint}`;
     }
 
+    const userHeaders = typeof options.headers === "function" ? options.headers() : options.headers;
+
     const headers: Record<string, string> = {
-        ...(options.headers || {}),
+        ...(userHeaders || {}),
         "X-Version": VERSION,
         "Content-Type": "application/json;charset=utf-8",
     };

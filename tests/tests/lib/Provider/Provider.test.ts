@@ -212,6 +212,19 @@ describe("Base Provider features", () => {
             expect(headers?.["X-my-header"]).toStrictEqual("blabla");
         });
 
+        test("should handle custom HTTP headers from function", async () => {
+            const provider = getProvider({
+                headers: () => ({ "X-my-header": "blabla" }),
+            });
+
+            global.fetchMocker.mockClear();
+
+            await provider.fetchSuggestions("A");
+            const { headers } = (global.fetchMocker.mock.calls[0][1] || {}) as callWithHeaders;
+
+            expect(headers?.["X-my-header"]).toStrictEqual("blabla");
+        });
+
         test("should overwrite custom HTTP headers with ones used by plugin", async () => {
             const provider = getProvider({
                 headers: { "X-Version": "blabla" },

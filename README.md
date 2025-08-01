@@ -150,9 +150,10 @@ Record<string, unknown>
 
 #### headers
 
-Объект с дополнительными HTTP-заголовками, которые необходимо передать на сервер.
+Дополнительные HTTP-заголовки, которые необходимо передать на сервер.
+Может быть или в виде объекта с заголовками, или функцией, возвращающей этот объект.
 
-Тип: `Record<string, string>`
+Тип: `Record<string, string> | (() => Record<string, string>)`
 
 По умолчанию: не задано.
 
@@ -663,7 +664,7 @@ const suggestions = createSuggestions(input, {
 ```ts
 interface API_OPTIONS {
     url?: string;
-    headers?: Record<string, string>;
+    headers?: Record<string, string> | (() => Record<string, string>);
     token?: string;
     serviceUrl?: string;
     partner?: string;
