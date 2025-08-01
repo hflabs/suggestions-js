@@ -12,6 +12,7 @@ import { removeListeners, setAttributes, restoreAttributes, setListeners } from 
 export class InputView {
     private _el: HTMLInputElement;
     private _lastInputValue: string | null = null;
+    private _prevHandledValue: string | null = null;
     private _currentListeners: INPUT_LISTENERS = {};
 
     constructor(el: HTMLInputElement) {
@@ -44,7 +45,18 @@ export class InputView {
     setValue(newValue: string) {
         this._lastInputValue = null;
         this._el.value = newValue;
+        this.updateSavedValue();
         if (document.activeElement === this._el) this.setCursorAtEnd();
+    }
+
+    // Проверить, изменилось ли значение в инпуте
+    isChanged() {
+        return this._prevHandledValue !== this._el.value;
+    }
+
+    // Обновить сохраненное значение инпута
+    updateSavedValue() {
+        this._prevHandledValue = this._el.value;
     }
 
     // Установить временное значение инпута, сохранив предыдущее значение
@@ -52,6 +64,7 @@ export class InputView {
         if (this._lastInputValue === null) this._lastInputValue = this._el.value;
 
         this._el.value = newValue;
+        this.updateSavedValue();
         if (document.activeElement === this._el) this.setCursorAtEnd();
     }
 

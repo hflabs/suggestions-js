@@ -117,4 +117,27 @@ describe("Element events", () => {
 
         input.removeEventListener("suggestions-fixdata", handler);
     });
+
+    test("ignore same input value", async () => {
+        global.fetchMocker.mockResponse(JSON.stringify({ suggestions: [{ value: "A" }] }));
+
+        setInputValue("A");
+        await global.wait(100);
+
+        expect(global.fetchMocker).toHaveBeenCalled();
+
+        global.fetchMocker.mockClear();
+
+        setInputValue("A");
+        await global.wait(100);
+
+        expect(global.fetchMocker).not.toHaveBeenCalled();
+
+        global.fetchMocker.mockClear();
+
+        setInputValue("AB");
+        await global.wait(100);
+
+        expect(global.fetchMocker).toHaveBeenCalled();
+    });
 });

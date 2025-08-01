@@ -8,6 +8,13 @@ import { BaseInputModel } from "./base";
 export class InputSuggestModel extends BaseInputModel {
     async handleInput() {
         if (!this._provider) return;
+
+        // Значение не изменилось - обрабатывать не нужно
+        if (!this._view.isChanged()) return;
+
+        // Обновить сохраненное значение
+        this._view.updateSavedValue();
+
         // Отменить прыдущий запрос
         this._provider.abortSuggestionsRequest();
 

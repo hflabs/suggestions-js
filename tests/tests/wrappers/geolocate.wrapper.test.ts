@@ -109,7 +109,7 @@ describe("Geolocataion wrapper", () => {
         suggs.setOptions({ params: newOpts });
         global.fetchMocker.mockClear();
 
-        setInputValue("A");
+        setInputValue("Ab");
         await global.wait(100);
 
         const newBody = JSON.parse((global.fetchMocker.mock.calls[0][1]?.body as string) || "");
@@ -159,6 +159,9 @@ describe("Geolocataion wrapper", () => {
             .soft(global.fetchMocker.mock.calls[0][1]?.body)
             .toContain('"locations_boost":[{"kladr_id":"7700000000000"}]');
 
+        const options = suggs.getOptions();
+        expect(options.params).toBeUndefined();
+
         global.fetchMocker.mockClear();
 
         const newInput = createInput();
@@ -180,7 +183,7 @@ describe("Geolocataion wrapper", () => {
         other.setOptions({ type: "name" });
         global.fetchMocker.mockClear();
 
-        newInput.setInputValue("A");
+        newInput.setInputValue("Ab");
         await global.wait(100);
 
         expect

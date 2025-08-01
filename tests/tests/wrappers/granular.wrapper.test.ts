@@ -160,7 +160,7 @@ describe("Granular wrapper", () => {
                 },
             });
 
-            context.instance.setInputValue("a");
+            context.instance.setInputValue("ab");
             await wait(100);
 
             expect(Object.keys(getReqLocations()[0])).toEqual([
@@ -193,7 +193,7 @@ describe("Granular wrapper", () => {
 
             global.fetchMocker.mockClear();
 
-            context.instance.setInputValue("a");
+            context.instance.setInputValue("ab");
             await wait(100);
 
             expect(getReqLocations()[0]).toStrictEqual({ kladr_id: "6300000700000" });
@@ -272,7 +272,7 @@ describe("Granular wrapper", () => {
 
                 context.instance.suggestions.setSuggestion(makeSuggestion({ city: "city" }));
 
-                child.setInputValue("a");
+                child.setInputValue("ab");
                 await wait(100);
 
                 expect.soft(getReqLocations()).toMatchObject([{ city: "city" }]);
