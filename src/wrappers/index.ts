@@ -14,7 +14,7 @@ class Suggestions {}
  * Подключает все обертки для виджета (геолокация, гранулярность)
  */
 export const createSuggestions = <T extends AnyData = AnyData>(
-    el: HTMLInputElement,
+    el: HTMLInputElement | HTMLTextAreaElement,
     ...[options, parentInstance]: GranularArgs<T, GeoPluginOptions<T>>
 ) => {
     const plugin = createSuggestionsPlugin<T>(el, options);

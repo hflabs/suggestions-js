@@ -10,7 +10,7 @@ import { observeViewport } from "./helpers/observeViewport";
 /**
  * Инициализирует подсказки на элементе
  */
-export const init = (el: HTMLInputElement, options: PLUGIN_OPTIONS) => {
+export const init = (el: HTMLInputElement | HTMLTextAreaElement, options: PLUGIN_OPTIONS) => {
     const inputView = new InputView(el);
     const containerView = new ContainerView();
     el.after(containerView.wrapper);

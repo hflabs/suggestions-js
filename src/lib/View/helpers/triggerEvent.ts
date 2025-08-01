@@ -1,6 +1,6 @@
 interface IProps {
     eventName: string;
-    inputEl: HTMLInputElement;
+    inputEl: HTMLInputElement | HTMLTextAreaElement;
     args?: NonNullable<unknown>;
 }
 

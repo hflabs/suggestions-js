@@ -10,12 +10,12 @@ import { removeListeners, setAttributes, restoreAttributes, setListeners } from 
  * Предоставляет вспомогательные методы
  */
 export class InputView {
-    private _el: HTMLInputElement;
+    private _el: HTMLInputElement | HTMLTextAreaElement;
     private _lastInputValue: string | null = null;
     private _prevHandledValue: string | null = null;
     private _currentListeners: INPUT_LISTENERS = {};
 
-    constructor(el: HTMLInputElement) {
+    constructor(el: HTMLInputElement | HTMLTextAreaElement) {
         this._el = el;
     }
 
@@ -90,7 +90,21 @@ export class InputView {
     // Установить курсор в конец текста
     setCursorAtEnd() {
         setTimeout(() => {
-            this._el.setSelectionRange(-1, -1);
+            try {
+                const { type } = this._el;
+
+                if (!(this._el instanceof HTMLTextAreaElement) && type !== "text") {
+                    this._el.type = "text";
+                }
+
+                this._el.setSelectionRange(-1, -1);
+
+                if (!(this._el instanceof HTMLTextAreaElement) && type !== "text") {
+                    this._el.type = type;
+                }
+            } catch {
+                this._el.value = this.getValue();
+            }
         });
     }
 

@@ -13,7 +13,7 @@ import { clone } from "@/helpers/object";
  * Подключает Подсказки после появления input элемента в документе.
  */
 export const createSuggestionsPlugin = <T extends AnyData = AnyData>(
-    el: HTMLInputElement,
+    el: HTMLInputElement | HTMLTextAreaElement,
     options: PLUGIN_OPTIONS<T>
 ) => {
     let pluginData: PluginData = { isEnabled: false };

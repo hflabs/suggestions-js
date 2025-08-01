@@ -1,4 +1,4 @@
-const isElementVisible = (element: HTMLInputElement) => {
+const isElementVisible = (element: HTMLInputElement | HTMLTextAreaElement) => {
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && document.body.contains(element);
 };
@@ -11,10 +11,12 @@ const isElementVisible = (element: HTMLInputElement) => {
  * -- если элемент скрыт через opacity или другими подобными методами, он будет видимым
  */
 export const observeVisibility = (
-    element: HTMLInputElement,
+    element: HTMLInputElement | HTMLTextAreaElement,
     callback: (isVisible: boolean, disconnect: () => void) => void
 ) => {
-    if (!element || !(element instanceof HTMLInputElement)) return () => {};
+    if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
+        return () => {};
+    }
 
     const options = { root: document.documentElement };
 
