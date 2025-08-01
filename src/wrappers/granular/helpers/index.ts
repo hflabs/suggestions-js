@@ -67,10 +67,13 @@ export const setGranularOptions = <T extends AnyData, S extends PluginWithSpy<T>
         formatSelected: (suggestion) => {
             const currentOptions = plugin[WRAPPER_PROXY_FIELD].getOptions(OPTIONS_ID);
 
-            if (!canBeGranular(currentOptions.type)) {
-                return typeof currentOptions.formatSelected === "function"
+            const formatted =
+                typeof currentOptions.formatSelected === "function"
                     ? currentOptions.formatSelected(suggestion)
                     : null;
+
+            if (!canBeGranular(currentOptions.type) || formatted) {
+                return formatted;
             }
 
             const params = getParams(suggestion.value, currentOptions.params);
