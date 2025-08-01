@@ -91,6 +91,12 @@ describe("Granular wrapper", () => {
                     region: "Самарская",
                 },
             ]);
+
+            const instanceOptions = context.instance.suggestions.getOptions();
+            const parentOptions = context.parent.suggestions.getOptions();
+
+            expect(Object.keys(instanceOptions.params || {})).toEqual(["from_bound", "to_bound"]);
+            expect(Object.keys(parentOptions.params || {})).toEqual(["from_bound", "to_bound"]);
         });
 
         test("should use kladr id if specified", async (context: ContextWithSuggestions) => {

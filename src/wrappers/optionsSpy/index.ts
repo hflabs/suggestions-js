@@ -79,6 +79,8 @@ export const wrapWithOptionsSpy = <T extends AnyData = AnyData>(plugin: Plugin<T
 
     Object.defineProperty(plugin, WRAPPER_PROXY_FIELD, { value: optionsProxy });
 
+    plugin.getOptions = (() => clone(currentOptions)) as PluginWithSpy<T>["getOptions"];
+
     return plugin as PluginWithSpy<T>;
 };
 
