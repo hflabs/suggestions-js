@@ -251,10 +251,7 @@ export class Provider {
 
         const suggestionToSelect = suggestionsWithState?.[0];
 
-        if (!suggestionToSelect) {
-            this.chosenSuggestion = null;
-            return { selected: false as const };
-        }
+        if (!suggestionToSelect) return { selected: false as const };
 
         const suggestionValue = this._getSuggestionValue(suggestionToSelect.suggestion);
         suggestionToSelect.suggestion.value = suggestionValue;

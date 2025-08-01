@@ -70,8 +70,8 @@ export class InputSelectModel extends BaseInputModel {
 
         const result = await this._provider.fixData(query);
 
-        this._handleSelection(result, lastValue, true);
-        this._triggerFixData();
+        if (result.selected) this._handleSelection(result, lastValue, true);
+        this._triggerFixData(result.selected);
 
         this._containerView.hide();
         this._canChooseSuggestion = true;

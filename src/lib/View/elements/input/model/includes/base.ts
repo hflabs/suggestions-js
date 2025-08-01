@@ -70,12 +70,12 @@ export class BaseInputModel {
         });
     }
 
-    _triggerFixData() {
+    _triggerFixData(useChosen: boolean) {
         if (!this._provider) return;
 
         triggerEvent({
             eventName: "suggestions-fixdata",
-            args: { suggestion: this._provider.chosenSuggestion },
+            args: { suggestion: useChosen ? this._provider.chosenSuggestion : null },
             inputEl: this._view.getEl(),
         });
     }
