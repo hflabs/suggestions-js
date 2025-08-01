@@ -18,8 +18,9 @@ interface IProps {
  * Возвращает значение подсказки с учетом границ bounds.
  * Только для подсказок по адресам и ФИАС
  */
-export const getBoundedValue = ({ bounds, suggestion, type }: IProps) => {
-    if (!["address", "fias"].includes(type)) return suggestion.value;
+export const getBoundedValue = ({ bounds, suggestion, type }: IProps = {} as IProps) => {
+    if (!["address", "fias"].includes(type) || !suggestion.data || !bounds) return suggestion.value;
+    if (typeof bounds !== "object" || typeof suggestion.data !== "object") return suggestion.value;
 
     const idsToCompose = getBoundsIds(bounds, type);
 
