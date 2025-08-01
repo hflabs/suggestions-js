@@ -37,10 +37,12 @@ export const makeGranular = <T extends AnyData, S extends PluginWithSpy<T>>(
     const handleDispose = () => {
         if (!isParentValid(enrichedParent, enrichedPlugin)) return;
         parentInput.removeEventListener("suggestions-invalidateselection", handleInvalidate);
+        parentInput.removeEventListener("suggestions-clear", handleInvalidate);
         parentInput.removeEventListener("suggestions-select", handleSelect);
     };
 
     parentInput.addEventListener("suggestions-invalidateselection", handleInvalidate);
+    parentInput.addEventListener("suggestions-clear", handleInvalidate);
     parentInput.addEventListener("suggestions-select", handleSelect);
     parentInput.addEventListener("suggestions-dispose", handleDispose);
 
