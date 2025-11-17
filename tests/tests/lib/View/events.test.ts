@@ -118,7 +118,8 @@ describe("Element events", () => {
         input.removeEventListener("suggestions-fixdata", handler);
     });
 
-    test("ignore same input value", async () => {
+    test("ignore same input value", async (context: ContextWithSuggestions) => {
+        context.suggestions.setOptions({ noCache: true });
         global.fetchMocker.mockResponse(JSON.stringify({ suggestions: [{ value: "A" }] }));
 
         setInputValue("A");
@@ -136,6 +137,33 @@ describe("Element events", () => {
         global.fetchMocker.mockClear();
 
         setInputValue("AB");
+        await global.wait(100);
+
+        expect(global.fetchMocker).toHaveBeenCalled();
+    });
+
+    test("update input value on focus", async (context: ContextWithSuggestions) => {
+        context.suggestions.setOptions({ noCache: true });
+        global.fetchMocker.mockResponse(JSON.stringify({ suggestions: [{ value: "A" }] }));
+
+        setInputValue("A");
+        await global.wait(100);
+
+        expect(global.fetchMocker).toHaveBeenCalled();
+
+        global.fetchMocker.mockClear();
+
+        input.value = "";
+        setInputValue("A");
+        await global.wait(100);
+
+        expect(global.fetchMocker).not.toHaveBeenCalled();
+
+        global.fetchMocker.mockClear();
+
+        input.value = "";
+        input.dispatchEvent(new FocusEvent("focus"));
+        setInputValue("A");
         await global.wait(100);
 
         expect(global.fetchMocker).toHaveBeenCalled();

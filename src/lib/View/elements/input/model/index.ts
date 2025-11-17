@@ -165,6 +165,8 @@ export class InputModel extends BaseInputModel {
 
         if (!this._provider || !isInputActive) return;
 
+        this._view.updateSavedValue();
+
         const suggestionsData = await this._suggestModel.getSuggestionsIfAllowed();
         if (suggestionsData) {
             this._checkChoosenSuggestion(suggestionsData);
