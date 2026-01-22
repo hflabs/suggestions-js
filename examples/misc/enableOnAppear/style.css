@@ -1,0 +1,70 @@
+body {
+    position: relative;
+}
+
+.inputs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 0;
+    margin: 0 !important;
+}
+
+.buttons {
+    margin-top: 24px;
+    display: flex;
+    gap: 16px;
+}
+
+.notification {
+    background-color: rgb(207, 233, 207);
+    padding: 12px 48px;
+    border-radius: 8px;
+    width: fit-content;
+
+    position: absolute;
+    top: 24px;
+    right: 24px;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s ease-in-out;
+}
+
+.notification.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.inputs-container:not(.hidden) {
+    animation: slideOpen 0.3s ease-in forwards;
+}
+
+.inputs-container.hidden {
+    animation: slideClose 0.3s ease-in forwards;
+}
+
+@keyframes slideOpen {
+    0% {
+        max-height: 0;
+        overflow: hidden;
+    }
+    99% {
+        max-height: 200px;
+        overflow: hidden;
+    }
+    100% {
+        max-height: 200px;
+    }
+}
+
+@keyframes slideClose {
+    0% {
+        max-height: 200px;
+        overflow: hidden;
+    }
+    100% {
+        max-height: 0;
+        overflow: hidden;
+    }
+}

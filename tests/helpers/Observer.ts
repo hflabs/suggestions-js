@@ -3,7 +3,7 @@
 
 import { vi } from "vitest";
 
-type Intersection = { intersectionRatio: number }[];
+type Intersection = { intersectionRatio: number; isIntersecting: boolean }[];
 
 type Callback = (intersectionData: Intersection) => void;
 
@@ -12,7 +12,12 @@ export default () => {
 
     window.IntersectionObserver = vi.fn((cb: Callback) => ({
         observe() {
-            cb([{ intersectionRatio: 1 }]);
+            cb([
+                {
+                    intersectionRatio: 1,
+                    isIntersecting: true,
+                },
+            ]);
         },
         unobserve() {},
         disconnect() {},

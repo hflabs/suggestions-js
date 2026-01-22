@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="../../../dist/suggestions.min.js"></script>
+        <script src="../../token.js" defer></script>
+        <script src="./index.js" defer></script>
+        <link rel="stylesheet" href="../../../dist/suggestions.min.css" />
+        <link rel="stylesheet" href="../../styles.css" />
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <section class="container">
+            <h1>Инициализация плагина после появление инпута в документе (видимого)</h1>
+
+            <div class="inputs-container">
+                <input class="suggestions-input" type="text" />
+                <input class="suggestions-input" type="text" />
+            </div>
+
+            <div class="buttons">
+                <button class="button-toggle">Скрыть/раскрыть контейнер</button>
+                <button class="button-renew">Пересоздать виджеты</button>
+            </div>
+
+            <div class="notification">✅ Виджеты пересозданы!</div>
+        </section>
+    </body>
+</html>

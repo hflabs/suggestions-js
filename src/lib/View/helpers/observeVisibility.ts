@@ -22,7 +22,7 @@ export const observeVisibility = (
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            callback(entry.intersectionRatio > 0, () => observer.disconnect());
+            callback(entry.isIntersecting, () => observer.disconnect());
         });
     }, options);
 
