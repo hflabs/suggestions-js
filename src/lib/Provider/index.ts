@@ -175,7 +175,6 @@ export class Provider {
         const areSuggestionsSame = areSame(suggestionToSelect.suggestion, this.chosenSuggestion);
 
         this.chosenSuggestion = suggestionToSelect.suggestion;
-        this._suggestionsWithState[index] = suggestionToSelect;
 
         this.chosenSuggestionIndex = index;
 
@@ -282,6 +281,19 @@ export class Provider {
             query.length >= (this._options.minChars || MIN_CHARS_DEFAULT) &&
             this._strategy.isQueryRequestable(query, this._options)
         );
+    }
+
+    /**
+     * Проверяет, выбрана ли переданная подсказка в качестве активной (с учетом возможного обогащения)
+     */
+    isSuggestionSelected(suggestion: Suggestion) {
+        if (!this.chosenSuggestion) return false;
+        if (areSame(this.chosenSuggestion, suggestion)) return true;
+
+        const cached = this._suggestionsService.getEnrichedSuggestionFromCache(suggestion);
+        if (!cached) return false;
+
+        return areSame(this.chosenSuggestion, cached);
     }
 
     /**

@@ -54,6 +54,9 @@ export class EnrichProvider {
         const { enrichmentEndpoint, urlSlug, getEnrichmentParams } = this._strategy;
         const { onSearchStart } = this._options;
 
+        const cached = this.getCachedSuggestion(suggestion.suggestion);
+        if (cached) return cached;
+
         const enrichParams = getEnrichmentParams(suggestion.suggestion, requestParams);
         if (!this._canEnrich(suggestion, enrichParams.query) || !enrichmentEndpoint) return;
 
@@ -67,6 +70,10 @@ export class EnrichProvider {
 
         if (!response.data || hasQueryChanged()) return;
         return this._handleResponse(response.data, suggestion.suggestion);
+    }
+
+    getCachedSuggestion(suggestion: Suggestion) {
+        return this._cache.enrich.get(suggestion, this._options.type);
     }
 
     private _handleResponse(data: Suggestions, original: Suggestion) {

@@ -92,7 +92,11 @@ export class SuggestProvider {
     }
 
     private _handleResponse(suggestions: Suggestion<AnyData>[], query: string, params: AnyData) {
-        const enrichedSuggestions = suggestions.map(this._enrichSuggestionFromCache.bind(this));
+        const enrichedSuggestions = suggestions.map((s) => ({
+            suggestion: s,
+            enriched: false,
+        }));
+
         const { noCache, preventBadQueries } = this._options;
 
         if (!noCache) {
@@ -103,8 +107,7 @@ export class SuggestProvider {
         }
 
         if (typeof this._options.onSearchComplete === "function") {
-            const enrichedSuggestionsData = enrichedSuggestions.map(({ suggestion }) => suggestion);
-            this._options.onSearchComplete(query, enrichedSuggestionsData);
+            this._options.onSearchComplete(query, clone(suggestions));
         }
 
         return enrichedSuggestions;
@@ -112,26 +115,6 @@ export class SuggestProvider {
 
     _getCachedSuggestions(params: AnyData) {
         const cached = this._cache.suggest.get(params, this._options.type);
-
-        if (!cached) return;
-
-        return cached.suggestions.map((s) =>
-            s.enriched ? s : this._enrichSuggestionFromCache(s.suggestion)
-        );
-    }
-
-    /**
-     * Преобразует список подсказок.
-     * Для каждой подсказки возвращает оригинальное или обогащенное значение (если возможно) и статус enriched
-     */
-    _enrichSuggestionFromCache(suggestion: Suggestion) {
-        const enrichedSuggestionByQuery = this._options.noCache
-            ? null
-            : this._cache.enrich.get(suggestion, this._options.type);
-
-        return {
-            suggestion: enrichedSuggestionByQuery || suggestion,
-            enriched: Boolean(enrichedSuggestionByQuery),
-        };
+        return cached?.suggestions;
     }
 }

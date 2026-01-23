@@ -1,6 +1,6 @@
 import type { ISuggestionsStrategy } from "@provider_strategy/types";
 import type { HasQueryChanged } from "@/lib/Provider/types";
-import type { AnyData } from "@/lib/types";
+import type { AnyData, Suggestion } from "@/lib/types";
 import type { SUGGEST_OPTIONS } from "./types";
 
 import { SuggestProvider } from "./includes/suggest";
@@ -59,6 +59,9 @@ export const getSuggestionsService = (
         return await enrichmentProvider.enrich(suggestion, params, () => hasQueryChanged(query));
     };
 
+    const getEnrichedSuggestionFromCache = (suggestion: Suggestion) =>
+        enrichmentProvider.getCachedSuggestion(suggestion);
+
     return {
         updateOptions,
         getSuggestions,
@@ -66,6 +69,7 @@ export const getSuggestionsService = (
         abortSuggestionsRequest: suggestProvider.abortSuggestionsRequest.bind(suggestProvider),
         clearCache,
         getStatus: statusProvider.getStatus.bind(statusProvider),
+        getEnrichedSuggestionFromCache,
     };
 };
 

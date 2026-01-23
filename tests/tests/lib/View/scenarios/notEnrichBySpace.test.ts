@@ -1,15 +1,7 @@
 // @vitest-environment jsdom
 
-import { test, expect, vi } from "vitest";
+import { test, expect } from "vitest";
 import useProviderMocks from "../helpers/ProviderMock";
-
-vi.mock("@/lib/View/scenarios/listeners/getSuggestions.ts", async (importOriginal) => {
-    const orig = await importOriginal();
-    return {
-        ...(orig as object),
-        getUpdateSuggestionsHandler: () => vi.fn(),
-    };
-});
 
 test("Should not enrich a suggestion when selected by SPACE", async () => {
     const { input, setInputValue, hitKeyDown } = global.createInput();
