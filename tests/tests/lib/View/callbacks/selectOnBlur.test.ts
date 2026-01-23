@@ -3,6 +3,7 @@
 import { describe, test, expect, beforeEach, afterEach, type TestContext, vi } from "vitest";
 import appendUnrestrictedValue from "../helpers/appendUnrestrictedValue";
 import useProviderMocks, { type SuggestionsInstance } from "../helpers/ProviderMock";
+import chooseSuggestion from "../helpers/chooseSuggestion";
 
 type ContextWithSuggestions = TestContext & {
     suggestions: SuggestionsInstance;
@@ -32,7 +33,7 @@ const suggestions = [
 ];
 
 describe("Select on blur", () => {
-    const { input, setInputValue, triggerBlur } = globalThis.createInput();
+    const { input, setInputValue, triggerBlur, hitKeyDown } = globalThis.createInput();
     const { getProviderInstance, createSuggestions, clearProviderMocks } = useProviderMocks();
 
     beforeEach((context: ContextWithSuggestions) => {
@@ -59,6 +60,22 @@ describe("Select on blur", () => {
         expect(spy).toHaveBeenCalledWith(appendUnrestrictedValue(suggestions[0][1]), false);
     });
 
+    test("should not trigger on full match when not visible", async (context: ContextWithSuggestions) => {
+        const spy = vi.fn();
+        context.suggestions.setOptions({ onSelect: spy });
+        global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[0] }));
+
+        setInputValue("Albania");
+        await global.wait(100);
+
+        context.suggestions.hide();
+
+        triggerBlur();
+        await global.wait(100);
+
+        expect(spy).not.toHaveBeenCalled();
+    });
+
     test("should trigger when suggestion is selected manually", async (context: ContextWithSuggestions) => {
         const spy = vi.fn();
         context.suggestions.setOptions({ onSelect: spy });
@@ -73,6 +90,46 @@ describe("Select on blur", () => {
 
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith(appendUnrestrictedValue(suggestions[0][2]), true);
+    });
+
+    test("should trigger when suggestion is selected by navigation", async (context: ContextWithSuggestions) => {
+        const spy = vi.fn();
+        context.suggestions.setOptions({ onSelect: spy });
+        global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[0] }));
+
+        setInputValue("A");
+        await global.wait(100);
+
+        hitKeyDown("ArrowDown");
+        triggerBlur();
+        await global.wait(100);
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(appendUnrestrictedValue(suggestions[0][0]), true);
+    });
+
+    test("should trigger when suggestion is selected by navigation (with chosenSuggestion)", async (context: ContextWithSuggestions) => {
+        const spy = vi.fn();
+        context.suggestions.setOptions({ onSelect: spy });
+        global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[0] }));
+
+        setInputValue("A");
+        await global.wait(100);
+
+        chooseSuggestion(0);
+
+        global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[0] }));
+        context.suggestions.updateSuggestions();
+        await global.wait(100);
+
+        spy.mockClear();
+
+        hitKeyDown("ArrowDown");
+        triggerBlur();
+        await global.wait(100);
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(appendUnrestrictedValue(suggestions[0][1]), true);
     });
 
     test("should NOT trigger on partial match", async (context: ContextWithSuggestions) => {

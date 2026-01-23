@@ -8,7 +8,6 @@ import {
     DEFAULT_TRIGGER_SELECT_ON_ENTER,
     DEFAULT_TRIGGER_SELECT_ON_SPACE,
 } from "@view/view.constants";
-import { areSame } from "@/helpers/object";
 import { ModelArgs } from "./types";
 import { BaseInputModel } from "./includes/base";
 import { InputNavigateModel } from "./includes/navigate";
@@ -190,7 +189,9 @@ export class InputModel extends BaseInputModel {
         // сначала отменить текущий запрос подсказок, если все еще не завершен
         this._provider.abortSuggestionsRequest();
 
-        if (this._options.triggerSelectOnBlur ?? DEFAULT_TRIGGER_SELECT_ON_BLUR) {
+        const canSelectOnBlur = this._options.triggerSelectOnBlur ?? DEFAULT_TRIGGER_SELECT_ON_BLUR;
+
+        if (canSelectOnBlur && this._containerView.isVisible) {
             await this._selectModel.chooseMatchingSuggestion();
         } else {
             // иначе просто скрыть список подсказок
@@ -209,7 +210,7 @@ export class InputModel extends BaseInputModel {
         if (!suggestionsData.fetched || !this._provider || !this._provider.chosenSuggestion) return;
 
         const index = suggestionsData.suggestions.findIndex((s) =>
-            areSame(this._provider?.chosenSuggestion, s.suggestion)
+            this._provider?.isSuggestionSelected(s.suggestion)
         );
 
         this._provider.updateChosenSuggestionIndex(index);

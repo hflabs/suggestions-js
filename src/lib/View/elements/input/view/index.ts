@@ -59,6 +59,11 @@ export class InputView {
         this._prevHandledValue = this._el.value;
     }
 
+    // Получить последнее собственное значение инпута (исключая временные значения)
+    getLastOwnValueValue() {
+        return this._lastInputValue ?? this._el.value;
+    }
+
     // Установить временное значение инпута, сохранив предыдущее значение
     setTemporalValue(newValue: string) {
         if (this._lastInputValue === null) this._lastInputValue = this._el.value;

@@ -11,13 +11,14 @@ export class InputSelectModel extends BaseInputModel {
         if (!this._canChooseSuggestion || !this._provider) return;
 
         this._canChooseSuggestion = false; // стартовать процесс выбора подсказки
-        const lastValue = this._view.getValue();
+        const lastOwnValue = this._view.getLastOwnValueValue();
+        const currentValue = this._view.getValue();
 
         // выбрать подсказку по индексу
-        const result = await this._provider.selectSuggestionByIndex(suggestionIndex, lastValue);
+        const result = await this._provider.selectSuggestionByIndex(suggestionIndex, currentValue);
 
         this._view.triggerFocus();
-        this._handleSelection(result, lastValue, true);
+        this._handleSelection(result, lastOwnValue, true);
 
         if (result.selected && result.suggestionValue) this._containerView.hide();
         this._canChooseSuggestion = true;
@@ -33,13 +34,14 @@ export class InputSelectModel extends BaseInputModel {
         }
 
         this._canChooseSuggestion = false;
-        const lastValue = this._view.getValue();
+        const lastOwnValue = this._view.getLastOwnValueValue();
+        const currentValue = this._view.getValue();
 
         // выбрать подходящую подсказку по текущему значению инпута
-        const result = await this._provider.selectMatchingSuggestion(lastValue);
+        const result = await this._provider.selectMatchingSuggestion(currentValue);
         this._provider.abortSuggestionsRequest();
 
-        this._handleSelection(result, lastValue, addSpace);
+        this._handleSelection(result, lastOwnValue, addSpace);
 
         this._containerView.hide();
         this._canChooseSuggestion = true;
@@ -50,13 +52,14 @@ export class InputSelectModel extends BaseInputModel {
         if (!hasSuggestions || !this._provider) return;
 
         this._canChooseSuggestion = false;
-        const lastValue = this._view.getValue();
+        const lastOwnValue = this._view.getLastOwnValueValue();
+        const currentValue = this._view.getValue();
 
         // выбрать подходящую подсказку по текущему значению инпута
-        const result = await this._provider.selectMatchingSuggestion(lastValue, false);
+        const result = await this._provider.selectMatchingSuggestion(currentValue, false);
         this._provider.abortSuggestionsRequest();
 
-        this._handleSelection(result, lastValue, true);
+        this._handleSelection(result, lastOwnValue, true);
 
         this._provider.updateChosenSuggestionIndex(-1);
         this._canChooseSuggestion = true;
@@ -66,11 +69,11 @@ export class InputSelectModel extends BaseInputModel {
         if (!this._canChooseSuggestion || !this._provider) return;
 
         this._canChooseSuggestion = false; // стартовать процесс выбора подсказки
-        const lastValue = this._view.getValue();
+        const lastOwnValue = this._view.getLastOwnValueValue();
 
         const result = await this._provider.fixData(query);
 
-        if (result.selected) this._handleSelection(result, lastValue, true);
+        if (result.selected) this._handleSelection(result, lastOwnValue, true);
         this._triggerFixData(result.selected);
 
         this._containerView.hide();
@@ -99,7 +102,7 @@ export class InputSelectModel extends BaseInputModel {
 
         const suggestionsData = await this._provider.suggestionsFetchPromise;
 
-        // подсказку можно выбирать, если они получены и нет уже выбранной подсказки
-        return Boolean(suggestionsData?.fetched && !this._provider.chosenSuggestion);
+        // подсказку можно выбирать, если есть доступные для выбора подсказки
+        return Boolean(suggestionsData?.fetched && suggestionsData.suggestions.length);
     }
 }
