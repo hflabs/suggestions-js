@@ -80,6 +80,8 @@ export class InputModel extends BaseInputModel {
     }
 
     private _handleKeyDown(e: KeyboardEvent) {
+        if (!this._provider) return;
+
         const keyHandlers = {
             [KEYS.ENTER]: this._handleEnter,
             [KEYS.SPACE]: this._handleSpace,
@@ -91,13 +93,7 @@ export class InputModel extends BaseInputModel {
 
         const handler = keyHandlers[e.code]?.bind(this);
 
-        if (handler) {
-            handler(e);
-            return;
-        }
-
-        // Если нажата специальная клавиша и она не обработана отдельно выше - предотвратить ввод
-        if (Object.values(KEYS).includes(e.code)) this._cancelKeyDown(e);
+        if (handler) handler(e);
     }
 
     private _cancelKeyDown(e: KeyboardEvent) {
@@ -105,7 +101,8 @@ export class InputModel extends BaseInputModel {
         e.preventDefault();
     }
 
-    private _handleEnter() {
+    private _handleEnter(e: KeyboardEvent) {
+        if (this._containerView.isVisible) this._cancelKeyDown(e);
         if (!(this._options.triggerSelectOnEnter ?? DEFAULT_TRIGGER_SELECT_ON_ENTER)) return;
 
         if (this._containerView.isVisible) {
@@ -116,6 +113,8 @@ export class InputModel extends BaseInputModel {
     }
 
     private _handleSpace(e: KeyboardEvent) {
+        if (!this._containerView.isVisible) return;
+
         const triggerSelectOnSpace =
             this._options.triggerSelectOnSpace ?? DEFAULT_TRIGGER_SELECT_ON_SPACE;
 
@@ -126,11 +125,14 @@ export class InputModel extends BaseInputModel {
     }
 
     private _handleTab(e: KeyboardEvent) {
+        if (!this._containerView.isVisible) return;
         if (this._options.tabDisabled ?? DEFAULT_TAB_DISABLED) this._cancelKeyDown(e);
     }
 
-    private _handleEsc() {
-        if (!this._provider) return;
+    private _handleEsc(e: KeyboardEvent) {
+        if (!this._provider || !this._containerView.isVisible) return;
+
+        this._cancelKeyDown(e);
 
         this._view.restoreLastSavedValue();
         this._containerView.hide();
@@ -139,15 +141,17 @@ export class InputModel extends BaseInputModel {
         this._provider.updateChosenSuggestionIndex(-1);
     }
 
-    private _handleUp() {
+    private _handleUp(e: KeyboardEvent) {
         if (!this._containerView.isVisible) return;
+        this._cancelKeyDown(e);
         this._navigateModel.handleNavigate("up");
     }
 
-    private _handleDown() {
+    private _handleDown(e: KeyboardEvent) {
         if (!this._provider) return;
 
         if (this._containerView.isVisible) {
+            this._cancelKeyDown(e);
             this._navigateModel.handleNavigate("down");
         } else {
             const suggestions = this._provider.getSuggestionsData(this._view.getValue());

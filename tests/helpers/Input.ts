@@ -12,8 +12,14 @@ export default () => {
             input.dispatchEvent(new FocusEvent("blur"));
         },
         hitKeyDown: (code: string) => {
-            const event = new KeyboardEvent("keydown", { code });
+            const event = new KeyboardEvent("keydown", {
+                code,
+                cancelable: true,
+                bubbles: true,
+            });
+
             input.dispatchEvent(event);
+            return event;
         },
     };
 };
