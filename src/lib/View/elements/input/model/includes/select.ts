@@ -33,6 +33,9 @@ export class InputSelectModel extends BaseInputModel {
             return;
         }
 
+        // Отменить прыдущий запрос
+        this._provider.abortSuggestionsRequest();
+
         this._canChooseSuggestion = false;
         const lastOwnValue = this._view.getLastOwnValueValue();
         const currentValue = this._view.getValue();
@@ -50,6 +53,9 @@ export class InputSelectModel extends BaseInputModel {
     async chooseAndContinue() {
         const hasSuggestions = await this._hasSuggestionsToChoose();
         if (!hasSuggestions || !this._provider) return;
+
+        // Отменить прыдущий запрос
+        this._provider.abortSuggestionsRequest();
 
         this._canChooseSuggestion = false;
         const lastOwnValue = this._view.getLastOwnValueValue();

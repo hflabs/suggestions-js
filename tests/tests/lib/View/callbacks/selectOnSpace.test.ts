@@ -3,6 +3,7 @@
 import { describe, test, expect, beforeEach, afterEach, type TestContext, vi } from "vitest";
 import appendUnrestrictedValue from "../helpers/appendUnrestrictedValue";
 import useProviderMocks, { type SuggestionsInstance } from "../helpers/ProviderMock";
+import areSuggestionsVisible from "../helpers/areSuggestionsVisible";
 
 type ContextWithSuggestions = TestContext & {
     suggestions: SuggestionsInstance;
@@ -115,5 +116,67 @@ describe("Select on Space", () => {
 
         expect(spy).toHaveBeenCalledTimes(1);
         expect(input.value).toStrictEqual("name ");
+    });
+
+    describe("additional scenarios for space selection", () => {
+        beforeEach(() => {
+            global.fetchMocker.mockClear();
+        });
+
+        test("should show suggestions after space when new suggestions available", async () => {
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[1] }));
+            setInputValue("name");
+            await global.wait(100);
+
+            getProviderInstance(0).updateChosenSuggestionIndex(0);
+
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[1] }));
+
+            hitKeyDown("Space");
+            await global.wait(100);
+
+            expect(areSuggestionsVisible()).toBe(true);
+            expect(global.fetchMocker).toHaveBeenCalledTimes(2);
+            expect(input.value).toBe("name ");
+        });
+
+        test("should hide suggestions after space when no suggestions", async () => {
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: suggestions[1] }));
+            setInputValue("name");
+            await global.wait(100);
+
+            getProviderInstance(0).updateChosenSuggestionIndex(0);
+
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: [] }));
+
+            hitKeyDown("Space");
+            await global.wait(100);
+
+            expect(areSuggestionsVisible()).toBe(false);
+            expect(input.value).toBe("name ");
+        });
+
+        test("should hide suggestions after space when only one suggestion and it matches selected", async () => {
+            const singleSuggestion = [
+                {
+                    value: "name",
+                    data: {},
+                },
+            ];
+
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: singleSuggestion }));
+            setInputValue("name");
+            await global.wait(100);
+
+            getProviderInstance(0).updateChosenSuggestionIndex(0);
+
+            global.fetchMocker.mockResponseOnce(JSON.stringify({ suggestions: singleSuggestion }));
+
+            hitKeyDown("Space");
+            await global.wait(100);
+
+            expect(areSuggestionsVisible()).toBe(false);
+            expect(input.value).toBe("name ");
+        });
     });
 });

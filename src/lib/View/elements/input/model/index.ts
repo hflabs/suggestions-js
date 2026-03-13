@@ -112,7 +112,7 @@ export class InputModel extends BaseInputModel {
         }
     }
 
-    private _handleSpace(e: KeyboardEvent) {
+    private async _handleSpace(e: KeyboardEvent) {
         if (!this._containerView.isVisible) return;
 
         const triggerSelectOnSpace =
@@ -121,7 +121,17 @@ export class InputModel extends BaseInputModel {
         if (!triggerSelectOnSpace || !this._view.isCursorAtEnd()) return;
 
         this._cancelKeyDown(e);
-        this._selectModel.chooseAndContinue();
+        await this._selectModel.chooseAndContinue();
+
+        // После выбора подсказки запрашиваем и рендерим новые подсказки, не закрывая список
+        const suggestionsData = await this._suggestModel.getSuggestionsIfAllowed();
+
+        if (suggestionsData) {
+            const rendered = this._triggerRender(suggestionsData);
+            if (!rendered) this._containerView.hide();
+        } else {
+            this._containerView.hide();
+        }
     }
 
     private _handleTab(e: KeyboardEvent) {
@@ -221,14 +231,14 @@ export class InputModel extends BaseInputModel {
     }
 
     private _triggerRender(suggestionsData: SuggestionsData) {
-        if (!suggestionsData?.fetched || !this._provider) return;
+        if (!suggestionsData?.fetched || !this._provider) return false;
 
         const selected = this._provider.getSelection();
         const firstSuggestion = suggestionsData.suggestions[0]?.suggestion;
 
         // не выводить список подсказок, если в нем только одна текущая подсказка
         if (suggestionsData.suggestions.length === 1 && selected?.value === firstSuggestion.value) {
-            return;
+            return false;
         }
 
         this._containerView.render({
@@ -241,5 +251,7 @@ export class InputModel extends BaseInputModel {
             beforeRender: this._options.beforeRender,
             closeDelay: this._options.closeDelay,
         });
+
+        return true;
     }
 }
