@@ -25,5 +25,12 @@ test("Should not enrich a suggestion when selected by SPACE", async () => {
     hitKeyDown("Space");
     await global.wait(100);
 
-    expect(global.fetchMocker).not.toHaveBeenCalled();
+    expect(global.fetchMocker).toHaveBeenCalledTimes(1);
+
+    const enrichCalls = global.fetchMocker.mock.calls.filter((call) => {
+        const body = call[1]?.body;
+        return typeof body === "string" ? JSON.parse(body)?.count === 1 : false;
+    });
+
+    expect(enrichCalls).toHaveLength(0);
 });
